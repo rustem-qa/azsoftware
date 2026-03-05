@@ -1545,92 +1545,86 @@ window.toggleCamera = function() {
                     </div>
                 </div>
 
-                <!-- Zəng İnterfeysi (Düzəldilmiş) -->
-<div id="callInterface" class="hidden h-full flex flex-col video-container rounded-2xl overflow-hidden">
-    
-    <!-- 1. VİDEO SAHƏSİ (flex-1 - qalan bütün sahəni tutur, relative positioning əlavə edildi) -->
-    <div class="flex-1 relative p-4" id="videoArea">
-        <div class="video-grid double w-full h-full" id="videoGrid">
-            <!-- Local Video (və ya Screen Share) -->
-            <div class="participant-video" id="localVideoContainer">
-                <video id="localVideo" autoplay muted playsinline></video>
-                <div class="participant-info">
-                    <span class="material-symbols-outlined text-sm">person</span>
-                    <span>Siz</span>
-                    <div class="speaking-indicator hidden" id="localSpeaking"></div>
-                </div>
-            </div>
-            
-            <!-- Remote Video -->
-            <div class="participant-video" id="remoteVideoContainer">
-                <video id="remoteVideo" autoplay playsinline></video>
-                <div class="participant-info">
-                    <span class="material-symbols-outlined text-sm">person</span>
-                    <span id="remoteUserName">Rəqib</span>
-                    <div class="speaking-indicator hidden" id="remoteSpeaking"></div>
-                </div>
-                
-                <!-- Ekran paylaşımı indikatoru -->
-                <div id="screenShareIndicator" class="screen-share-indicator hidden">
-                    <span class="material-symbols-outlined text-sm">screen_share</span>
-                    <span>Ekran paylaşımı</span>
-                </div>
-                
-                <!-- Gözləmə overlay -->
-                <div id="waitingOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <div class="text-center text-white">
-                        <div class="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
-                        <p class="text-lg">Qoşulma gözlənilir...</p>
+              <!-- Zəng İnterfeysi (Gizli başlanğıcda) -->
+                <div id="callInterface" class="hidden h-full flex flex-col video-container rounded-2xl overflow-hidden">
+                    
+                    <!-- Video Grid -->
+                    <div class="flex-1 p-4 video-grid double" id="videoGrid">
+                        <!-- Local Video (və ya Screen Share) -->
+                        <div class="participant-video" id="localVideoContainer">
+                            <video id="localVideo" autoplay muted playsinline></video>
+                            <div class="participant-info">
+                                <span  class="material-symbols-outlined text-sm">person</span>
+                                <span>Siz</span>
+                                <div class="speaking-indicator hidden" id="localSpeaking"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Remote Video -->
+                        <div class="participant-video" id="remoteVideoContainer">
+                            <video id="remoteVideo" autoplay playsinline></video>
+                            <div class="participant-info">
+                                <span class="material-symbols-outlined text-sm">person</span>
+                                <span id="remoteUserName">Rəqib</span>
+                                <div class="speaking-indicator hidden" id="remoteSpeaking"></div>
+                            </div>
+                            <!-- YENI: Ekran paylaşımı indicator -->
+                            <div id="screenShareIndicator" class="screen-share-indicator hidden">
+                                <span class="material-symbols-outlined text-sm">screen_share</span>
+                                <span>Ekran paylaşımı</span>
+                            </div>
+                            <div id="waitingOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <div class="text-center text-white">
+                                    <div class="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                                    <p class="text-lg">Qoşulma gözlənilir...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div class="bg-black/40 backdrop-blur-md p-4">
+                        <div class="flex items-center justify-between max-w-2xl mx-auto">
+                            <!-- Status -->
+                            <div class="text-white/80 text-sm connection-status" id="callStatus">
+                                Qoşulur...
+                            </div>
+                            
+                            <!-- Control Buttons -->
+                            <div class="flex items-center gap-4">
+                                <!-- Mute -->
+                                <button id="muteBtn" onclick="toggleMute()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
+                                    <span class="material-symbols-outlined">mic</span>
+                                    <span class="text-xs mt-1">Səs</span>
+                                </button>
+                                
+                                <!-- Screen Share -->
+                                <button id="screenBtn" onclick="toggleScreenShare()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
+                                    <span class="material-symbols-outlined">screen_share</span>
+                                    <span class="text-xs mt-1">Ekran</span>
+                                </button>
+                                <!-- YENI: Screen Share Dayandırmaq üçün (başlanğıcda gizli) -->
+                                 <button id="stopScreenBtn" onclick="stopScreenShareOnly()" class="control-btn w-12 h-12 rounded-full bg-red-500 text-white flex flex-col items-center justify-center hover:bg-red-600 hidden">
+                                      <span class="material-symbols-outlined">stop_screen_share</span>
+                                      <span class="text-xs mt-1">Dayandır</span>
+                                 </button>
+                                <!-- YENI: Kamera düyməsi -->
+                                <button id="cameraBtn" onclick="toggleCamera()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
+                                 <span class="material-symbols-outlined">videocam</span>
+                                  <span class="text-xs mt-1">Kamera</span>
+                                </button>
+                                
+                                <!-- End Call -->
+                                <button onclick="endCall()" class="control-btn w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 pulse-ring">
+                                    <span class="material-symbols-outlined text-2xl">call_end</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Timer -->
+                            <div class="text-white/80 text-sm font-mono" id="callTimer">00:00</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 2. KONTROL PANELİ (flex-shrink-0 əlavə edildi - sıxılmasın) -->
-    <div class="flex-shrink-0 bg-black/40 backdrop-blur-md p-4">
-        <div class="flex items-center justify-between max-w-2xl mx-auto">
-            <!-- Status -->
-            <div class="text-white/80 text-sm connection-status" id="callStatus">Qoşulur...</div>
-            
-            <!-- Control Buttons -->
-            <div class="flex items-center gap-4">
-                <!-- Mute -->
-                <button id="muteBtn" onclick="toggleMute()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
-                    <span class="material-symbols-outlined">mic</span>
-                    <span class="text-xs mt-1">Səs</span>
-                </button>
-                
-                <!-- Screen Share -->
-                <button id="screenBtn" onclick="toggleScreenShare()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
-                    <span class="material-symbols-outlined">screen_share</span>
-                    <span class="text-xs mt-1">Ekran</span>
-                </button>
-                
-                <!-- Stop Screen Share (başlanğıcda gizli) -->
-                <button id="stopScreenBtn" onclick="stopScreenShareOnly()" class="control-btn w-12 h-12 rounded-full bg-red-500 text-white flex flex-col items-center justify-center hover:bg-red-600 hidden">
-                    <span class="material-symbols-outlined">stop_screen_share</span>
-                    <span class="text-xs mt-1">Dayandır</span>
-                </button>
-                
-                <!-- Camera -->
-                <button id="cameraBtn" onclick="toggleCamera()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
-                    <span class="material-symbols-outlined">videocam</span>
-                    <span class="text-xs mt-1">Kamera</span>
-                </button>
-                
-                <!-- End Call -->
-                <button onclick="endCall()" class="control-btn w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 pulse-ring">
-                    <span class="material-symbols-outlined text-2xl">call_end</span>
-                </button>
-            </div>
-            
-            <!-- Timer -->
-            <div class="text-white/80 text-sm font-mono" id="callTimer">00:00</div>
-        </div>
-    </div>
-</div>
-
             </div>
         </main>
     </div>
@@ -1691,4 +1685,5 @@ window.toggleCamera = function() {
         }
     </script>
 </body>
+
 </html>
