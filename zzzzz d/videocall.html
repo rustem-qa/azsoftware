@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ekran Paylaşımı</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Zəng Musiqisi -->
+<audio id="callRingtone" preload="auto" loop>
+    <source src="https://nzt6ku-a.akamaihd.net/downloads/ringtones/files/ogg/iphonee-13-pro-instrumental-68016.ogg" type="audio/ogg">
+</audio>
+<!-- Yeni xəbər bildiriş səsi - bütün HTML fayllara əlavə edin -->
+<audio id="newsNotificationSound" preload="auto">
+    <source src="https://proxy.notificationsounds.com/notification-sounds/notification-bell-percussion-533/download/file-sounds-1236-notification-bell.ogg" type="audio/ogg">
+</audio>
+    
+    <!-- Theme Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#2d328f",
+                        secondary: "#1b66ea",
+                        background: "#ffffff",
+                        text: "#333333",
+                        "text-secondary": "#666666",
+                    },
+                    fontFamily: {
+                        display: ["Plus Jakarta Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        
+        .video-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        .control-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .screen-share-active {
+            box-shadow: 0 0 30px rgba(27, 102, 234, 0.6);
+            border: 2px solid #1b66ea;
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(27, 102, 234, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(27, 102, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(27, 102, 234, 0); }
+        }
+        
+        .connection-status {
+            animation: fadeInOut 3s infinite;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        .video-grid {
+            display: grid;
+            gap: 1rem;
+            height: 100%;
+        }
+        
+        .video-grid.single {
+            grid-template-columns: 1fr;
+        }
+        
+        .video-grid.double {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        /* YENI: Ekran paylaşımı layout-u */
+        .screen-share-layout {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .main-screen {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0f0f1e;
+        }
+        
+        .main-screen video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Tam ekran görüntüsü */
+            background: #000;
+        }
+        
+        .pip-screen {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 240px;
+            height: 180px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            background: #0f0f1e;
+            z-index: 10;
+        }
+        
+        .pip-screen video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .participant-video {
+            background: #0f0f1e;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .participant-video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .participant-info {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 20;
+        }
+        
+        .pip-screen .participant-info {
+            bottom: 8px;
+            left: 8px;
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        
+        .speaking-indicator {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: speaking 1s infinite;
+        }
+        
+        @keyframes speaking {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        .user-card {
+            transition: all 0.3s ease;
+        }
+        
+        .user-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(45, 50, 143, 0.15);
+        }
+
+        .online-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .online-indicator.online {
+            background: #22c55e;
+            box-shadow: 0 0 8px #22c55e;
+        }
+
+        .online-indicator.offline {
+            background: #9ca3af;
+        }
+
+        .online-indicator.incall {
+            background: #f59e0b;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Sağ tərəfdə scroll üçün */
+        .main-scroll {
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100vh;
+        }
+
+        .main-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .main-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .main-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(45, 50, 143, 0.3);
+            border-radius: 4px;
+        }
+
+        .main-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(45, 50, 143, 0.5);
+        }
+
+        /* Axtarış input stili */
+        .search-input {
+            border: 2px solid #333333;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: #1b66ea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(27, 102, 234, 0.1);
+        }
+        
+        /* YENI: Screen share indicator */
+        .screen-share-indicator {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(27, 102, 234, 0.9);
+                        color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 20;
+        }
+        /* YENI: Controls container always visible */
+             .controls-container {
+              position: relative;
+               z-index: 100;
+        }
+    </style>
+</head>
+<body class="bg-background text-text h-screen overflow-hidden">
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, get, remove, onDisconnect, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        function listenForNewNews() {
+            const newsRef = ref(db, 'news');
+            let initialLoad = true;
+            
+            onValue(newsRef, (snapshot) => {
+                if (initialLoad) {
+                    initialLoad = false;
+                    return;
+                }
+                
+                let latestNews = null;
+                let latestTime = 0;
+                
+                snapshot.forEach((child) => {
+                    const news = child.val();
+                    if (news.timestamp > latestTime) {
+                        latestTime = news.timestamp;
+                        latestNews = { id: child.key, ...news };
+                    }
+                });
+                
+                if (latestNews && (Date.now() - latestNews.timestamp) < 5000) {
+                    showNewsNotification(latestNews);
+                    playNewsSound();
+                }
+            });
+        }
+
+        function showNewsNotification(news) {
+            const existing = document.getElementById('newsNotificationPopup');
+            if (existing) existing.remove();
+            
+            const popup = document.createElement('div');
+            popup.id = 'newsNotificationPopup';
+            popup.className = 'fixed top-5 right-4 bg-white border-2 border-[#2d328f] rounded-xl p-4 shadow-[0_0_30px_rgba(45,50,143,0.4)] z-50 animate-slideIn max-w-sm cursor-pointer';
+            popup.onclick = () => {
+                window.location.href = 'xəbərlər.html';
+            };
+            
+            popup.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#2d328f] to-[#1b66ea] flex items-center justify-center text-white font-bold flex-shrink-0">
+                        <span class="material-symbols-outlined">newspaper</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[#2d328f] font-bold text-sm mb-1">Yeni Xəbər!</p>
+                        <p class="text-[#333333] font-medium text-sm truncate">${news.title}</p>
+                        <p class="text-text-secondary text-xs mt-1 line-clamp-2">${news.content.substring(0, 60)}...</p>
+                        <p class="text-xs text-[#1b66ea] mt-2 font-medium">Oxumaq üçün klikləyin →</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); this.parentElement.parentElement.remove()" class="text-gray-400 hover:text-gray-600">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                if (popup.parentElement) popup.remove();
+            }, 10000);
+        }
+
+        function playNewsSound() {
+            const sound = document.getElementById('newsNotificationSound');
+            if (sound) {
+                sound.currentTime = 0;
+                sound.volume = 0.6;
+                sound.play().catch(e => console.log('Səs xətası:', e));
+            }
+        }
+
+        window.addEventListener('load', () => {
+            loadCurrentUser();
+            listenForNewNews();
+        });
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDli-QC8Vt17pjESnHhwzfkwIDLSW9hHyA",
+            authDomain: "realtime-database-37f15.firebaseapp.com",
+            databaseURL: "https://realtime-database-37f15-default-rtdb.firebaseio.com",
+            projectId: "realtime-database-37f15",
+            storageBucket: "realtime-database-37f15.firebasestorage.app",
+            messagingSenderId: "71634699985",
+            appId: "1:71634699985:web:fc3ab99eb5db32da7ca7f0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+        let selectedUser = null;
+        let localStream = null;
+        let screenStream = null;
+        let peerConnection = null;
+        let isScreenSharing = false;
+        let isCallActive = false;
+        let callId = null;
+        let remoteStream = null;
+        let currentCallRef = null;
+        let allUsers = [];
+        let fakeVideoTrack = null;
+        let isRemoteScreenSharing = false; // YENI: Uzaq tərəf ekran paylaşır mı?
+
+        const iceServers = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        };
+
+        function createFakeVideoTrack() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2;
+            canvas.height = 2;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 2, 2);
+            const stream = canvas.captureStream();
+            return stream.getVideoTracks()[0];
+        }
+
+        // YENI: Layout deyişdirme funksiyası
+        function updateVideoLayout(isScreenShareActive, isLocalScreenShare) {
+            const videoGrid = document.getElementById('videoGrid');
+            const localVideoContainer = document.getElementById('localVideoContainer');
+            const remoteVideoContainer = document.getElementById('remoteVideoContainer');
+            const localVideo = document.getElementById('localVideo');
+            const remoteVideo = document.getElementById('remoteVideo');
+            
+            if (isScreenShareActive) {
+                // Ekran paylaşımı aktiv - yeni layout
+                videoGrid.classList.remove('double');
+                videoGrid.classList.add('screen-share-layout');
+                
+                if (isLocalScreenShare) {
+                    // Local ekran paylaşımı - localVideo böyük, remoteVideo PIP
+                    localVideoContainer.className = 'main-screen';
+                    remoteVideoContainer.className = 'pip-screen';
+                    localVideo.style.objectFit = 'contain';
+                    remoteVideo.style.objectFit = 'cover';
+                } else {
+                    // Remote ekran paylaşımı - remoteVideo böyük, localVideo PIP
+                    remoteVideoContainer.className = 'main-screen';
+                    localVideoContainer.className = 'pip-screen';
+                    remoteVideo.style.objectFit = 'contain';
+                    localVideo.style.objectFit = 'cover';
+                }
+                
+                // Screen share indicator göster
+                const indicator = document.getElementById('screenShareIndicator');
+                if (indicator) indicator.classList.remove('hidden');
+                
+            } else {
+                // Normal layout - grid
+                videoGrid.classList.remove('screen-share-layout');
+                videoGrid.classList.add('double');
+                
+                localVideoContainer.className = 'participant-video';
+                remoteVideoContainer.className = 'participant-video';
+                
+                localVideo.style.objectFit = 'cover';
+                remoteVideo.style.objectFit = 'cover';
+                
+                // Screen share indicator gizle
+                const indicator = document.getElementById('screenShareIndicator');
+                if (indicator) indicator.classList.add('hidden');
+            }
+        }
+
+        function loadCurrentUser() {
+            const data = localStorage.getItem('adminUser');
+            if (!data) {
+                alert("Giriş tələb olunur!");
+                window.location.href = "index.html";
+                return;
+            }
+            
+            currentUser = JSON.parse(data);
+            
+            document.getElementById('currentUsername').textContent = currentUser.username;
+            document.getElementById('userAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+            document.getElementById('headerUsername').textContent = currentUser.username;
+            document.getElementById('headerAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+            
+            const userRef = ref(db, 'users/' + currentUser.username);
+            set(userRef, {
+                username: currentUser.username,
+                email: currentUser.email || currentUser.department || '',
+                lastSeen: Date.now(),
+                online: true,
+                inCall: false
+            });
+            
+            onDisconnect(userRef).update({
+                online: false,
+                inCall: false,
+                lastSeen: Date.now()
+            });
+            
+            listenForIncomingCalls();
+            loadUsersList();
+            
+            const incomingCall = localStorage.getItem('incomingCall');
+            if (incomingCall) {
+                const callData = JSON.parse(incomingCall);
+                localStorage.removeItem('incomingCall');
+                
+                if (callData.action === 'accept') {
+                    setTimeout(() => {
+                        acceptCall(callData.callId);
+                    }, 1000);
+                }
+            }
+        }
+
+        function loadUsersList() {
+            const usersRef = ref(db, 'users');
+            
+            onValue(usersRef, (snapshot) => {
+                allUsers = [];
+                const list = document.getElementById('usersList');
+                list.innerHTML = '';
+                
+                if (!snapshot.exists()) {
+                    list.innerHTML = '<div class="text-center text-gray-500 py-8">Heç bir istifadəçi tapılmadı</div>';
+                    updateUserCount(0);
+                    return;
+                }
+                
+                let userCount = 0;
+                
+                snapshot.forEach((child) => {
+                    const user = child.val();
+                    
+                    if (user.username === currentUser.username) return;
+                    
+                    userCount++;
+                    allUsers.push(user);
+                    
+                    let statusIcon = '';
+                    let statusText = '';
+                    let statusClass = '';
+                    
+                    if (user.inCall) {
+                        statusIcon = '🟡';
+                        statusText = 'Zəngdə';
+                        statusClass = 'incall';
+                    } else if (user.online) {
+                        statusIcon = '🟢';
+                        statusText = 'Onlayn';
+                        statusClass = 'online';
+                    } else {
+                        statusIcon = '⚪';
+                        statusText = 'Offlayn';
+                        statusClass = 'offline';
+                    }
+                    
+                    const lastSeen = user.lastSeen ? new Date(user.lastSeen).toLocaleTimeString('az-AZ', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : '';
+                    
+                    const div = document.createElement('div');
+                    div.className = 'user-card flex items-center justify-between p-4 bg-white rounded-xl border border-[#1b66ea]/30 hover:border-[#1b66ea] cursor-pointer';
+                    div.setAttribute('data-username', user.username.toLowerCase());
+                    div.onclick = () => selectUser(user);
+                    
+                    div.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#2d328f] to-[#1b66ea] flex items-center justify-center text-white font-bold text-lg">
+                                    ${user.username.charAt(0).toUpperCase()}
+                                </div>
+                                <span class="online-indicator ${statusClass} absolute bottom-0 right-0 border-2 border-white"></span>
+                            </div>
+                            <div>
+                                <div class="font-medium text-[#333333] capitalize text-base">${user.username}</div>
+                                <div class="text-xs text-gray-500 flex items-center gap-1">
+                                    <span>${statusIcon}</span>
+                                    <span>${statusText}</span>
+                                    ${!user.online && lastSeen ? `<span class="text-gray-400">• ${lastSeen}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <button 
+                            onclick="event.stopPropagation(); startCall('${user.username}')" 
+                            class="px-4 py-2 bg-gradient-to-r from-[#2d328f] to-[#1b66ea] text-white rounded-lg text-sm hover:shadow-lg transition-all flex items-center gap-2 ${user.inCall ? 'opacity-50 cursor-not-allowed' : ''}"
+                            ${user.inCall ? 'disabled title="İstifadəçi zəngdədir"' : ''}
+                        >
+                            <span class="material-symbols-outlined text-sm">video_call</span>
+                            ${user.inCall ? 'Zəngdə' : 'Zəng et'}
+                        </button>
+                    `;
+                    
+                    list.appendChild(div);
+                });
+                
+                if (userCount === 0) {
+                    list.innerHTML = '<div class="text-center text-gray-500 py-8">Başqa istifadəçi yoxdur</div>';
+                }
+                
+                updateUserCount(userCount);
+            });
+        }
+
+        window.searchUsers = function() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const userCards = document.querySelectorAll('.user-card');
+            let visibleCount = 0;
+            
+            userCards.forEach(card => {
+                const username = card.getAttribute('data-username');
+                if (username.includes(searchTerm)) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            const list = document.getElementById('usersList');
+            const noResult = document.getElementById('noSearchResult');
+            
+            if (visibleCount === 0 && searchTerm !== '') {
+                if (!noResult) {
+                    const div = document.createElement('div');
+                    div.id = 'noSearchResult';
+                    div.className = 'text-center text-gray-500 py-8';
+                    div.innerHTML = `
+                        <span class="material-symbols-outlined text-4xl mb-2 text-gray-400">search_off</span>
+                        <p>"${searchTerm}" üçün nəticə tapılmadı</p>
+                    `;
+                    list.appendChild(div);
+                }
+            } else if (noResult) {
+                noResult.remove();
+            }
+        };
+
+        window.handleSearchKey = function(e) {
+            if (e.key === 'Enter') {
+                searchUsers();
+            }
+        };
+
+        window.selectUser = function(user) {
+            selectedUser = user;
+            document.getElementById('selectedUserInfo').classList.remove('hidden');
+            document.getElementById('selectedUserName').textContent = user.username;
+            document.getElementById('selectedUserAvatar').textContent = user.username.charAt(0).toUpperCase();
+            document.getElementById('callBtn').disabled = false;
+            
+            document.getElementById('selectedUserInfo').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        };
+
+        window.startCall = async function(username) {
+            if (!username && !selectedUser) {
+                alert('Zəhmət olmasa istifadəçi seçin!');
+                return;
+            }
+            
+            const targetUser = username || selectedUser.username;
+            selectedUser = { username: targetUser };
+            
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true,
+                    video: true
+                });
+                
+            } catch (err) {
+                console.error('Kamera/Mikrofon icazəsi xətası:', err);
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    showPermissionDialog();
+                    return;
+                }
+                alert('Kamera/Mikrofon xətası: ' + err.message);
+                return;
+            }
+            
+            callId = [currentUser.username, targetUser].sort().join('_');
+            
+            showCallUI();
+            document.getElementById('callStatus').textContent = `${targetUser} zəng edilir...`;
+            document.getElementById('remoteUserName').textContent = targetUser;
+            
+            try {
+                setupAudioIndicator(localStream, 'localSpeaking');
+                
+                peerConnection = new RTCPeerConnection(iceServers);
+                
+                localStream.getTracks().forEach(track => {
+                    console.log('Local track əlavə edilir:', track.kind, track.label);
+                    peerConnection.addTrack(track, localStream);
+                });
+                
+                peerConnection.ontrack = (event) => {
+                    console.log('Remote track alındı:', event.track.kind, event.streams);
+                    
+                    if (event.streams && event.streams[0]) {
+                        const remoteStream = event.streams[0];
+                        
+                        const remoteVideo = document.getElementById('remoteVideo');
+                        if (remoteVideo) {
+                            remoteVideo.srcObject = remoteStream;
+                            remoteVideo.muted = false; 
+                            console.log('Remote stream video elementinə təyin edildi');
+                        }
+                        
+                        if (event.track.kind === 'audio') {
+                            setupAudioIndicator(remoteStream, 'remoteSpeaking');
+                        }
+                    }
+                    
+                    document.getElementById('waitingOverlay').classList.add('hidden');
+                };
+                
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const candidateRef = ref(db, `calls/${callId}/candidates/${currentUser.username}`);
+                        push(candidateRef, event.candidate.toJSON());
+                    }
+                };
+                
+                peerConnection.onconnectionstatechange = () => {
+                    console.log('Connection state:', peerConnection.connectionState);
+                    if (peerConnection.connectionState === 'connected') {
+                        document.getElementById('callStatus').textContent = 'Zəngdə';
+                        startTimer();
+                    } else if (peerConnection.connectionState === 'disconnected' || 
+                               peerConnection.connectionState === 'failed') {
+                        endCall();
+                    }
+                };
+                
+                const offer = await peerConnection.createOffer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: true
+                });
+                
+                await peerConnection.setLocalDescription(offer);
+                
+                currentCallRef = ref(db, `calls/${callId}`);
+                await set(currentCallRef, {
+                    offer: offer,
+                    caller: currentUser.username,
+                    callee: targetUser,
+                    status: 'calling',
+                    timestamp: Date.now()
+                });
+                
+                // YENI: Ekran paylaşımı dinləmə
+                onValue(currentCallRef, async (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) {
+                        if (isCallActive) {
+                            endCall();
+                        }
+                        return;
+                    }
+                    
+                    // YENI: Uzaq tərəfin ekran paylaşımı statusunu izlə
+                    if (data.screenShareActive !== undefined) {
+                        isRemoteScreenSharing = data.screenShareActive && data.screenShareBy !== currentUser.username;
+                        const isAnyScreenSharing = isScreenSharing || isRemoteScreenSharing;
+                        const isLocal = isScreenSharing;
+                        updateVideoLayout(isAnyScreenSharing, isLocal);
+                    }
+                    
+                    if (data.status === 'accepted' && data.answer && !peerConnection.currentRemoteDescription) {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                        document.getElementById('callStatus').textContent = 'Zəngdə';
+                        isCallActive = true;
+                        updateInCallStatus(true);
+                        document.getElementById('waitingOverlay').classList.add('hidden');
+                    } else if (data.status === 'rejected') {
+                        endCall();
+                    } else if (data.status === 'ended') {
+                        endCall();
+                    }
+                }); 
+                
+                const calleeCandidatesRef = ref(db, `calls/${callId}/candidates/${targetUser}`);
+                onValue(calleeCandidatesRef, (snapshot) => {
+                    snapshot.forEach((child) => {
+                        const candidate = new RTCIceCandidate(child.val());
+                        peerConnection.addIceCandidate(candidate);
+                    });
+                });
+                
+            } catch (err) {
+                console.error('Zəng xətası:', err);
+                alert('Zəng başlatmaq mümkün olmadı: ' + err.message);
+                endCall();
+            }
+        };
+
+        function showPermissionDialog() {
+            const existing = document.getElementById('permissionDialog');
+            if (existing) existing.remove();
+            
+            const dialog = document.createElement('div');
+            dialog.id = 'permissionDialog';
+            dialog.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm';
+            dialog.innerHTML = `
+                <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center shadow-[0_0_50px_rgba(45,50,143,0.5)]">
+                    <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center text-red-500 text-4xl mx-auto mb-4">
+                        <span class="material-symbols-outlined text-4xl">videocam_off</span>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-[#333333] mb-2">Kamera və Mikrofon İcazəsi Tələb Olunur</h3>
+                    <p class="text-[#666666] mb-6">Video zəng və ekran paylaşımı üçün kamera və mikrofon icazəsi verməlisiniz. Brauzer ayarlarından icazəni aktivləşdirin.</p>
+                    <div class="space-y-3">
+                        <button onclick="location.reload()" class="w-full py-3 bg-gradient-to-r from-[#2d328f] to-[#1b66ea] text-white rounded-xl font-medium hover:shadow-lg transition-all">
+                            Səhifəni Yenilə
+                        </button>
+                        <button onclick="document.getElementById('permissionDialog').remove()" class="w-full py-3 bg-gray-200 text-[#333333] rounded-xl hover:bg-gray-300 transition-all">
+                            Bağla
+                        </button>
+                    </div>
+                    <div class="mt-4 text-xs text-gray-500 text-left bg-gray-50 p-3 rounded-lg">
+                        <strong>Necə icazə verilir:</strong><br>
+                        1. Ünvan sətrindəki 🔒 ikonuna klikləyin<br>
+                        2. "Kamera" və "Mikrofon" seçin<br>
+                        3. "İcazə ver" seçin<br>
+                        4. Səhifəni yeniləyin
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+        }
+
+        function setupAudioIndicator(stream, elementId) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const analyser = audioContext.createAnalyser();
+            const microphone = audioContext.createMediaStreamSource(stream);
+            microphone.connect(analyser);
+            analyser.fftSize = 256;
+            
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const indicator = document.getElementById(elementId);
+            
+            function checkAudio() {
+                if (!isCallActive && elementId === 'remoteSpeaking') return;
+                
+                analyser.getByteFrequencyData(dataArray);
+                const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                
+                if (average > 20) {
+                    indicator.classList.remove('hidden');
+                } else {
+                    indicator.classList.add('hidden');
+                }
+                
+                requestAnimationFrame(checkAudio);
+            }
+            
+            checkAudio();
+        }
+
+        function listenForIncomingCalls() {
+            const callsRef = ref(db, 'calls');
+            
+            onValue(callsRef, (snapshot) => {
+                snapshot.forEach((child) => {
+                    const call = child.val();
+                    if (call.callee === currentUser.username && call.status === 'calling' && !document.getElementById('incomingCallPopup')) {
+                        showIncomingCall(call, child.key);
+                    }
+                });
+            });
+        }
+
+        function showIncomingCall(call, callKey) {
+            playRingtone();
+            
+            const popup = document.createElement('div');
+            popup.id = 'incomingCallPopup';
+            popup.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm';
+            popup.innerHTML = `
+                <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center shadow-[0_0_50px_rgba(45,50,143,0.5)] transform scale-100 animate-pulse">
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-br from-[#2d328f] to-[#1b66ea] flex items-center justify-center text-white text-4xl font-bold mx-auto mb-4 pulse-ring">
+                        ${call.caller.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 class="text-2xl font-semibold text-[#333333] mb-2">${call.caller}</h3>
+                    <p class="text-[#666666] mb-8 text-lg">Sizə video zəng edir...</p>
+                    <div class="flex gap-4 justify-center">
+                        <button onclick="rejectCall('${callKey}')" class="px-8 py-4 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all flex items-center gap-2 text-lg">
+                            <span class="material-symbols-outlined">call_end</span>
+                            Rədd et
+                        </button>
+                        <button onclick="acceptCall('${callKey}')" class="px-8 py-4 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-all flex items-center gap-2 text-lg">
+                            <span class="material-symbols-outlined">call</span>
+                            Cavab ver
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(popup);
+        }
+
+        let ringtone = null;
+        function playRingtone() {
+            if (ringtone) {
+                ringtone.pause();
+                ringtone.currentTime = 0;
+            }
+            
+            ringtone = document.getElementById('callRingtone');
+            if (ringtone) {
+                ringtone.currentTime = 0;
+                ringtone.volume = 0.7;
+                ringtone.play().catch(e => console.log('Musiqini oxutma xətası:', e));
+            } else {
+                ringtone = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmFgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+                ringtone.loop = true;
+                ringtone.play().catch(e => console.log('Səs xətası:', e));
+            }
+        }
+
+        function stopRingtone() {
+            const callRingtone = document.getElementById('callRingtone');
+            if (callRingtone) {
+                callRingtone.pause();
+                callRingtone.currentTime = 0;
+            }
+            
+            if (ringtone && ringtone !== callRingtone) {
+                ringtone.pause();
+                ringtone.currentTime = 0;
+            }
+            
+            ringtone = null;
+        }
+
+        window.acceptCall = async function(callKey) {
+            stopRingtone();
+            const popup = document.getElementById('incomingCallPopup');
+            if (popup) popup.remove();
+            
+            callId = callKey;
+            const callRef = ref(db, `calls/${callId}`);
+            const snapshot = await get(callRef);
+            const callData = snapshot.val();
+            
+            selectedUser = { username: callData.caller };
+            
+            showCallUI();
+            document.getElementById('callStatus').textContent = 'Qoşulur...';
+            document.getElementById('remoteUserName').textContent = callData.caller;
+            document.getElementById('waitingOverlay').classList.add('hidden');
+            
+            try {
+                console.log('Callee: Kamera və mikrofon tələb edilir...');
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true,
+                    video: true
+                });
+                console.log('Callee: Media stream alındı:', localStream.getTracks().map(t => t.kind));
+
+                const localVideo = document.getElementById('localVideo');
+                if (localVideo) {
+                    localVideo.srcObject = localStream;
+                    console.log('Callee: Local video təyin edildi');
+                }
+                
+                setupAudioIndicator(localStream, 'localSpeaking');
+                
+                peerConnection = new RTCPeerConnection(iceServers);
+                
+                localStream.getTracks().forEach(track => {
+                    console.log('Callee local track əlavə edilir:', track.kind);
+                    peerConnection.addTrack(track, localStream);
+                });
+                
+                peerConnection.ontrack = (event) => {
+                    console.log('Callee: Remote track alındı:', event.track.kind, event.streams);
+                    
+                    if (event.streams && event.streams[0]) {
+                        const remoteStream = event.streams[0];
+                        
+                        const remoteVideo = document.getElementById('remoteVideo');
+                        if (remoteVideo) {
+                            remoteVideo.srcObject = remoteStream;
+                            remoteVideo.muted = false;
+                            console.log('Callee: Remote stream təyin edildi');
+                        }
+                        
+                        if (event.track.kind === 'audio') {
+                            setupAudioIndicator(remoteStream, 'remoteSpeaking');
+                        }
+                    }
+                    
+                    document.getElementById('waitingOverlay').classList.add('hidden');
+                };
+                
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const candidateRef = ref(db, `calls/${callId}/candidates/${currentUser.username}`);
+                        push(candidateRef, event.candidate.toJSON());
+                    }
+                };
+                
+                peerConnection.onconnectionstatechange = () => {
+                    console.log('Callee connection state:', peerConnection.connectionState);
+                    if (peerConnection.connectionState === 'connected') {
+                        document.getElementById('callStatus').textContent = 'Zəngdə';
+                        startTimer();
+                    }
+                };
+                
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(callData.offer));
+                
+                const answer = await peerConnection.createAnswer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: true
+                });
+                
+                await peerConnection.setLocalDescription(answer);
+                
+                await update(callRef, {
+                    answer: answer,
+                    status: 'accepted'
+                });
+                
+                // YENI: Ekran paylaşımı dinləmə (callee tərəf üçün)
+                onValue(callRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data && data.screenShareActive !== undefined) {
+                        isRemoteScreenSharing = data.screenShareActive && data.screenShareBy !== currentUser.username;
+                        const isAnyScreenSharing = isScreenSharing || isRemoteScreenSharing;
+                        const isLocal = isScreenSharing;
+                        updateVideoLayout(isAnyScreenSharing, isLocal);
+                    }
+                });
+                
+                const callerCandidatesRef = ref(db, `calls/${callId}/candidates/${callData.caller}`);
+                onValue(callerCandidatesRef, (snapshot) => {
+                    snapshot.forEach((child) => {
+                        const candidate = new RTCIceCandidate(child.val());
+                        peerConnection.addIceCandidate(candidate);
+                    });
+                });
+                
+                isCallActive = true;
+                updateInCallStatus(true);
+                
+            } catch (err) {
+                console.error('Cavab vermə xətası (detallı):', err);
+                console.error('Xəta adı:', err.name);
+                console.error('Xəta mesajı:', err.message);
+                
+                let errorMsg = 'Zəngə qoşulmaq mümkün olmadı!';
+                
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    errorMsg = 'Kamera və mikrofon icazəsi verilmədi! Brauzer ayarlarından icazəni yoxlayın.';
+                    showPermissionDialog();
+                    return;
+                } else if (err.name === 'NotFoundError') {
+                    errorMsg = 'Kamera və ya mikrofon tapılmadı! Cihazınızı yoxlayın.';
+                } else if (err.name === 'NotReadableError') {
+                    errorMsg = 'Kamera/mikrofon başqa proqram tərəfindən istifadə edilir!';
+                } else if (err.name === 'TypeError') {
+                    errorMsg = 'Brauzer media cihazlarını dəstəkləmir və ya HTTPS tələb olunur!';
+                }
+                
+                alert(errorMsg);
+                endCall();
+            }
+        };
+
+        window.rejectCall = async function(callKey) {
+            stopRingtone();
+            const popup = document.getElementById('incomingCallPopup');
+            if (popup) popup.remove();
+            
+            const callRef = ref(db, `calls/${callKey}`);
+            await update(callRef, {
+                status: 'rejected'
+            });
+            
+            setTimeout(() => remove(callRef), 3000);
+        };
+
+        window.toggleScreenShare = async function() {
+            if (!isCallActive) {
+                alert('Əvvəlcə zəngə qoşulmalısınız!');
+                return;
+            }
+            
+            try {
+                if (!isScreenSharing) {
+                    console.log('Ekran paylaşımı başladılır...');
+                    
+                    screenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: { 
+                            cursor: "always",
+                            displaySurface: "monitor"
+                        },
+                        audio: true
+                    });
+                    
+                    const screenVideoTrack = screenStream.getVideoTracks()[0];
+                    const screenAudioTrack = screenStream.getAudioTracks()[0];
+                    
+                    if (!screenVideoTrack) {
+                        throw new Error('Video track alınmadı');
+                    }
+                    
+                    console.log('Ekran video track alındı:', screenVideoTrack.label);
+                    
+                    const videoSender = peerConnection.getSenders().find(s => 
+                        s.track && s.track.kind === 'video'
+                    );
+                    
+                    if (videoSender && videoSender.track) {
+                        window.savedCameraTrack = videoSender.track;
+                        console.log('Kamera track saxlandı');
+                    }
+                    
+                    if (videoSender) {
+                        console.log('Video sender əvəz edilir ekran ilə');
+                        await videoSender.replaceTrack(screenVideoTrack);
+                    } else {
+                        console.log('Video sender tapılmadı, yeni track əlavə edilir');
+                        peerConnection.addTrack(screenVideoTrack, screenStream);
+                    }
+                    
+                    if (screenAudioTrack) {
+                        const audioSender = peerConnection.getSenders().find(s => 
+                            s.track && s.track.kind === 'audio'
+                        );
+                        if (audioSender) {
+                            window.savedMicTrack = audioSender.track;
+                            await audioSender.replaceTrack(screenAudioTrack);
+                            console.log('Audio track ekran səsi ilə əvəz edildi');
+                        }
+                    }
+                    
+                    const localVideo = document.getElementById('localVideo');
+                    if (localVideo) {
+                        localVideo.srcObject = screenStream;
+                    }
+                    
+                    screenVideoTrack.onended = () => {
+                        console.log('Ekran paylaşımı dayandırıldı (sistem tərəfindən)');
+                        stopScreenShare();
+                    };
+                    
+                    await update(ref(db, `calls/${callId}`), {
+                        screenShareActive: true,
+                        screenShareBy: currentUser.username,
+                        timestamp: Date.now()
+                    });
+                    
+                    isScreenSharing = true;
+                    
+                    // YENI: Layout dəyişdir
+                    updateVideoLayout(true, true);
+                    
+                    // YENI: Düymələri dəyiş - screenBtn gizlət, stopScreenBtn göstər
+                      document.getElementById('screenBtn').classList.add('hidden');
+                      document.getElementById('stopScreenBtn').classList.remove('hidden');
+                    
+                    showNotification('Ekran paylaşımı aktivdir');
+                    
+                } else {
+                    await stopScreenShare();
+                }
+                
+            } catch (err) {
+                console.error('Ekran paylaşımı xətası:', err);
+                alert('Xəta: ' + err.message);
+            }
+        };
+        // YENI: Ekran paylaşımını dayandırmaq üçün ayrı funksiya
+             window.stopScreenShareOnly = async function() {
+             await stopScreenShare();
+              };
+
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'fixed top-24 right-4 bg-[#2d328f] text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slideIn';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        }
+
+        async function stopScreenShare() {
+            if (!screenStream) return;
+            
+            console.log('Ekran paylaşımı dayandırılır...');
+            
+            screenStream.getTracks().forEach(track => track.stop());
+            
+            const videoSender = peerConnection.getSenders().find(s => 
+                s.track && s.track.kind === 'video'
+            );
+            
+            if (videoSender && window.savedCameraTrack) {
+                try {
+                    await videoSender.replaceTrack(window.savedCameraTrack);
+                    console.log('Kamera track bərpa edildi');
+                    
+                    const localVideo = document.getElementById('localVideo');
+                    if (localVideo && localStream) {
+                        localVideo.srcObject = localStream;
+                    }
+                } catch (e) {
+                    console.error('Kamera bərpa xətası:', e);
+                }
+                window.savedCameraTrack = null;
+            } else if (videoSender) {
+                fakeVideoTrack = createFakeVideoTrack();
+                try {
+                    await videoSender.replaceTrack(fakeVideoTrack);
+                    console.log('Fake video track əlavə edildi');
+                } catch (e) {
+                    console.error('Fake track xətası:', e);
+                }
+            }
+            
+            if (window.savedMicTrack) {
+                const audioSender = peerConnection.getSenders().find(s => 
+                    s.track && s.track.kind === 'audio'
+                );
+                if (audioSender) {
+                    await audioSender.replaceTrack(window.savedMicTrack);
+                    console.log('Mikrofon track bərpa edildi');
+                }
+                window.savedMicTrack = null;
+            }
+            
+            isScreenSharing = false;
+            screenStream = null;
+            
+            await update(ref(db, `calls/${callId}`), {
+                screenShareActive: false,
+                timestamp: Date.now()
+            });
+            
+            // YENI: Layout qaytar
+            updateVideoLayout(isRemoteScreenSharing, false);
+            
+            // YENI: Düymələri yenilə - geri qaytar
+               document.getElementById('screenBtn').classList.remove('hidden');
+               document.getElementById('stopScreenBtn').classList.add('hidden');
+            
+            showNotification('Ekran paylaşımı dayandırıldı');
+        }
+
+        window.toggleMute = function() {
+            if (!localStream) return;
+            
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                const btn = document.getElementById('muteBtn');
+                if (audioTrack.enabled) {
+                    btn.classList.remove('bg-red-500', 'text-white');
+                    btn.innerHTML = `
+                        <span class="material-symbols-outlined">mic</span>
+                        <span class="text-xs mt-1">Səs</span>
+                    `;
+                } else {
+                    btn.classList.add('bg-red-500', 'text-white');
+                    btn.innerHTML = `
+                        <span class="material-symbols-outlined">mic_off</span>
+                        <span class="text-xs mt-1">Sönük</span>
+                    `;
+                }
+            }
+        };
+        // YENI: Kamera açma/bağlama funksiyası
+window.toggleCamera = function() {
+    if (!localStream) return;
+    
+    const videoTrack = localStream.getVideoTracks()[0];
+    if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        
+        const btn = document.getElementById('cameraBtn');
+        if (videoTrack.enabled) {
+            btn.classList.remove('bg-red-500', 'text-white');
+            btn.innerHTML = `
+                <span class="material-symbols-outlined">videocam</span>
+                <span class="text-xs mt-1">Kamera</span>
+            `;
+        } else {
+            btn.classList.add('bg-red-500', 'text-white');
+            btn.innerHTML = `
+                <span class="material-symbols-outlined">videocam_off</span>
+                <span class="text-xs mt-1">Bağlı</span>
+            `;
+        }
+    }
+};
+
+        window.endCall = async function() {
+            stopTimer();
+            stopRingtone();
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            if (screenStream) {
+                screenStream.getTracks().forEach(track => track.stop());
+                screenStream = null;
+            }
+            if (fakeVideoTrack) {
+                fakeVideoTrack.stop();
+                fakeVideoTrack = null;
+            }
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            if (callId) {
+                const callRef = ref(db, `calls/${callId}`);
+                await update(callRef, {
+                    status: 'ended',
+                    endedAt: Date.now()
+                });
+                setTimeout(() => remove(callRef), 5000);
+            }
+            
+            hideCallUI();
+            isCallActive = false;
+            isScreenSharing = false;
+            isRemoteScreenSharing = false;
+            updateInCallStatus(false);
+            callId = null;
+            currentCallRef = null;
+        };
+
+        function showCallUI() {
+            document.getElementById('callInterface').classList.remove('hidden');
+            document.getElementById('userSelection').classList.add('hidden');
+            
+            if (localStream) {
+                const localVideo = document.getElementById('localVideo');
+                if (localVideo) {
+                    localVideo.srcObject = localStream;
+                }
+            }
+        }
+
+        function hideCallUI() {
+            document.getElementById('callInterface').classList.add('hidden');
+            document.getElementById('userSelection').classList.remove('hidden');
+            
+            // YENI: Layout reset
+            updateVideoLayout(false, false);
+            
+            document.getElementById('waitingOverlay').classList.remove('hidden');
+            
+            document.getElementById('muteBtn').classList.remove('bg-red-500', 'text-white');
+            document.getElementById('muteBtn').innerHTML = `
+                <span class="material-symbols-outlined">mic</span>
+                <span class="text-xs mt-1">Səs</span>
+            `;
+            // YENI: Kamera düyməsini reset
+           document.getElementById('cameraBtn').classList.remove('bg-red-500', 'text-white');
+           document.getElementById('cameraBtn').innerHTML = `
+              <span class="material-symbols-outlined">videocam</span>
+              <span class="text-xs mt-1">Kamera</span>
+             `;
+
+            // YENI: Screen share düymələrini reset
+             document.getElementById('screenBtn').classList.remove('hidden');
+            document.getElementById('stopScreenBtn').classList.add('hidden');
+            
+            document.getElementById('localVideo').srcObject = null;
+            document.getElementById('remoteVideo').srcObject = null;
+        }
+
+        async function updateInCallStatus(inCall) {
+            const userRef = ref(db, 'users/' + currentUser.username);
+            await update(userRef, {
+                inCall: inCall,
+                lastSeen: Date.now()
+            });
+        }
+
+        window.addEventListener('load', loadCurrentUser);
+
+        window.addEventListener('beforeunload', async () => {
+            if (isCallActive) {
+                await endCall();
+            }
+            const userRef = ref(db, 'users/' + currentUser.username);
+            await update(userRef, {
+                online: false,
+                inCall: false,
+                lastSeen: Date.now()
+            });
+        });
+    </script>
+
+    <!-- Əsas Layout -->
+    <div class="flex h-screen w-full overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-[#ffffff] border-r border-[#2d328f]/50 flex flex-col flex-shrink-0 h-screen overflow-y-auto">
+            <div class="p-6 border-b border-[#2d328f]/50">
+                <a href="https://azsoftware.az/">
+                    <img src="http://azsoftware.az/wp-content/uploads/2022/10/logo-azsoftware@2x.png" 
+                         alt="Azsoftware Logo" 
+                         style="width: 200px; height: auto;">
+                </a>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="isdifadəçi1.html" class="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-[#333333] hover:bg-[#ffffff]/50 rounded-xl transition-all">
+                    <span class="material-symbols-outlined">person</span>
+                    <span class="font-medium">Profil</span>
+                </a>
+                <a href="sms.html" class="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-[#333333] hover:bg-[#ffffff]/50 rounded-xl transition-all">
+                    <span class="material-symbols-outlined">sms</span>
+                    <span class="font-medium">Messenger</span>
+                </a>
+                <a href="videocall.html" class="flex items-center gap-3 px-4 py-3 bg-[#1b66ea]/20 text-[#333333] rounded-xl border border-[#1b66ea]/50">
+                    <span class="material-symbols-outlined" >video_call</span>
+                    <span class="font-medium" style="color: #1b66ea;">Ekran paylaşımı</span>
+                </a>
+                <a href="xəbərlər.html" class="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-[#333333] hover:bg-[#ffffff]/50 rounded-xl transition-all">
+                  <span class="material-symbols-outlined">newspaper</span>
+                   <span class="font-medium">Xəbərlər</span>
+                </a>
+            </nav>
+            
+            <div class="p-4 border-t border-[#2d328f]/50">
+                <button onclick="location.href='index.html'" class="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-[#333333] w-full hover:bg-[#ffffff]/50 rounded-xl transition-all">
+                    <span class="material-symbols-outlined" style="color: #1b66ea;">logout</span>
+                    <span class="font-medium" style="color: #1b66ea;">Çıxış Et</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content - Sağ tərəfdə scroll -->
+        <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+            
+            <!-- Header -->
+            <header class="h-16 border-b border-[#2d328f]/50 flex items-center justify-between px-8 bg-[#ffffff]/30 backdrop-blur-sm flex-shrink-0">
+                <h2 class="text-xl font-semibold text-[#333333]"> Ekran Paylaşımı</h2>
+                <div class="flex items-center gap-4">
+                    <span class="text-text-secondary text-sm" id="headerUsername">-</span>
+                    <div id="headerAvatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-[#2d328f] to-[#1b66ea] flex items-center justify-center text-white font-bold">
+                        ?
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content - Sağ tərəfdə scroll -->
+            <div class="flex-1 main-scroll p-6">
+                
+                <!-- İstifadəçi Seçimi -->
+                <div id="userSelection" class="min-h-full flex flex-col max-w-4xl mx-auto pb-6">
+                    
+                    <!-- Başlıq -->
+                    <div class="mb-6">
+                        <h3 class="text-2xl font-bold text-[#333333] mb-2">İstifadəçilər</h3>
+                        <p class="text-[#666666]">Zəng etmək istədiyiniz istifadəçini seçin və ya birbaşa zəng düyməsinə klikləyin</p>
+                    </div>
+
+                    <!-- Axtarış və İstifadəçi Siyahısı -->
+                    <div class="bg-[#ffffff]/50 rounded-2xl border border-[#1b66ea]/50 p-6 mb-6 ist">
+                        <!-- Axtarış inputu - QARA ÇƏRÇİVƏLİ -->
+                        <div class="mb-4">
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">search</span>
+                                <input 
+                                    type="text" 
+                                    id="searchInput" 
+                                    placeholder="İstifadəçi adı axtar..." 
+                                    class="search-input w-full pl-10 pr-4 py-3 rounded-lg text-[#333333] placeholder-gray-400"
+                                    oninput="searchUsers()"
+                                    onkeypress="handleSearchKey(event)"
+                                >
+                                <button onclick="searchUsers()" class="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-[#1b66ea] text-white rounded text-sm hover:bg-[#2d328f] transition-all">
+                                    Axtar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-semibold text-[#333333] flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[#1b66ea]">people</span>
+                                Onlayn İstifadəçilər
+                            </h4>
+                            <span class="text-xs text-[#666666] bg-[#1b66ea]/10 px-3 py-1 rounded-full" id="userCount">Yüklənir...</span>
+                        </div>
+                        <div id="usersList" class="flex-4 main-scroll p-6 space-y-2">
+                            <!-- İstifadəçilər buraya gələcək -->
+                        </div>
+                    </div>
+                    
+                    <!-- Seçilmiş İstifadəçi -->
+                    <div id="selectedUserInfo" class="hidden bg-gradient-to-r from-[#2d328f]/10 to-[#1b66ea]/10 rounded-2xl border border-[#1b66ea]/50 p-6 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div id="selectedUserAvatar" class="w-16 h-16 rounded-full bg-gradient-to-br from-[#2d328f] to-[#1b66ea] flex items-center justify-center text-white text-2xl font-bold">
+                                    ?
+                                </div>
+                                <div>
+                                    <h4 id="selectedUserName" class="text-xl font-semibold text-[#333333]">-</h4>
+                                    <p class="text-sm text-[#666666]">Video zəng üçün hazırdır</p>
+                                </div>
+                            </div>
+                            <button id="callBtn" onclick="startCall()" disabled class="px-8 py-4 bg-gradient-to-r from-[#2d328f] to-[#1b66ea] text-white rounded-xl font-medium hover:shadow-[0_0_30px_rgba(45,50,143,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                                <span class="material-symbols-outlined">video_call</span>
+                                Zəng Başlat
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- İstifadəçi təlimatı -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                        <h4 class="font-medium text-[#2d328f] mb-2 flex items-center gap-2">
+                            <span class="material-symbols-outlined">info</span>
+                            Necə istifadə edilir?
+                        </h4>
+                        <ul class="text-sm text-[#666666] space-y-2 list-disc list-inside">
+                            <li>Yuxarıdakı siyahıdan istifadəçi seçin və ya yanındakı <strong>"Zəng et"</strong> düyməsinə klikləyin</li>
+                            <li>Zəng başladıqdan sonra <strong>"Ekran"</strong> düyməsi ilə ekranınızı paylaşa bilərsiniz</li>
+                            <li>Səsli danışmaq üçün mikrofon icazəsi verilməlidir</li>
+                            <li>Ekran paylaşımı zamanı səs də ötürülür</li>
+                            <li><strong>🟢 Onlayn</strong> - İstifadəçi hazırdır | <strong>🟡 Zəngdə</strong> - Məşğuldur | <strong>⚪ Offlayn</strong> - Çıxış edib</li>
+                        </ul>
+                    </div>
+
+                    <!-- Məlumat paneli -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white rounded-xl border border-[#1b66ea]/30 p-4 text-center">
+                            <span class="material-symbols-outlined text-3xl text-[#1b66ea] mb-2">screen_share</span>
+                            <div class="text-sm font-medium text-[#333333]">Ekran Paylaşımı</div>
+                            <div class="text-xs text-[#666666]">Tam ekran və ya pəncərə</div>
+                        </div>
+                        <div class="bg-white rounded-xl border border-[#1b66ea]/30 p-4 text-center">
+                            <span class="material-symbols-outlined text-3xl text-[#1b66ea] mb-2">mic</span>
+                            <div class="text-sm font-medium text-[#333333]">Səsli Əlaqə</div>
+                            <div class="text-xs text-[#666666]">Keyfiyyətli səs ötürülməsi</div>
+                        </div>
+                        <div class="bg-white rounded-xl border border-[#1b66ea]/30 p-4 text-center">
+                            <span class="material-symbols-outlined text-3xl text-[#1b66ea] mb-2">security</span>
+                            <div class="text-sm font-medium text-[#333333]">Təhlükəsiz</div>
+                            <div class="text-xs text-[#666666]">Şifrəli bağlantı</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zəng İnterfeysi (Düzəldilmiş) -->
+<div id="callInterface" class="hidden h-full flex flex-col video-container rounded-2xl overflow-hidden">
+    
+    <!-- 1. VİDEO SAHƏSİ (flex-1 - qalan bütün sahəni tutur, relative positioning əlavə edildi) -->
+    <div class="flex-1 relative p-4" id="videoArea">
+        <div class="video-grid double w-full h-full" id="videoGrid">
+            <!-- Local Video (və ya Screen Share) -->
+            <div class="participant-video" id="localVideoContainer">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="participant-info">
+                    <span class="material-symbols-outlined text-sm">person</span>
+                    <span>Siz</span>
+                    <div class="speaking-indicator hidden" id="localSpeaking"></div>
+                </div>
+            </div>
+            
+            <!-- Remote Video -->
+            <div class="participant-video" id="remoteVideoContainer">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="participant-info">
+                    <span class="material-symbols-outlined text-sm">person</span>
+                    <span id="remoteUserName">Rəqib</span>
+                    <div class="speaking-indicator hidden" id="remoteSpeaking"></div>
+                </div>
+                
+                <!-- Ekran paylaşımı indikatoru -->
+                <div id="screenShareIndicator" class="screen-share-indicator hidden">
+                    <span class="material-symbols-outlined text-sm">screen_share</span>
+                    <span>Ekran paylaşımı</span>
+                </div>
+                
+                <!-- Gözləmə overlay -->
+                <div id="waitingOverlay" class="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <div class="text-center text-white">
+                        <div class="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                        <p class="text-lg">Qoşulma gözlənilir...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 2. KONTROL PANELİ (flex-shrink-0 əlavə edildi - sıxılmasın) -->
+    <div class="flex-shrink-0 bg-black/40 backdrop-blur-md p-4">
+        <div class="flex items-center justify-between max-w-2xl mx-auto">
+            <!-- Status -->
+            <div class="text-white/80 text-sm connection-status" id="callStatus">Qoşulur...</div>
+            
+            <!-- Control Buttons -->
+            <div class="flex items-center gap-4">
+                <!-- Mute -->
+                <button id="muteBtn" onclick="toggleMute()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
+                    <span class="material-symbols-outlined">mic</span>
+                    <span class="text-xs mt-1">Səs</span>
+                </button>
+                
+                <!-- Screen Share -->
+                <button id="screenBtn" onclick="toggleScreenShare()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
+                    <span class="material-symbols-outlined">screen_share</span>
+                    <span class="text-xs mt-1">Ekran</span>
+                </button>
+                
+                <!-- Stop Screen Share (başlanğıcda gizli) -->
+                <button id="stopScreenBtn" onclick="stopScreenShareOnly()" class="control-btn w-12 h-12 rounded-full bg-red-500 text-white flex flex-col items-center justify-center hover:bg-red-600 hidden">
+                    <span class="material-symbols-outlined">stop_screen_share</span>
+                    <span class="text-xs mt-1">Dayandır</span>
+                </button>
+                
+                <!-- Camera -->
+                <button id="cameraBtn" onclick="toggleCamera()" class="control-btn w-12 h-12 rounded-full bg-white/20 text-white flex flex-col items-center justify-center hover:bg-white/30">
+                    <span class="material-symbols-outlined">videocam</span>
+                    <span class="text-xs mt-1">Kamera</span>
+                </button>
+                
+                <!-- End Call -->
+                <button onclick="endCall()" class="control-btn w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 pulse-ring">
+                    <span class="material-symbols-outlined text-2xl">call_end</span>
+                </button>
+            </div>
+            
+            <!-- Timer -->
+            <div class="text-white/80 text-sm font-mono" id="callTimer">00:00</div>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Current User Info (gizli) -->
+    <div id="currentUserInfo" class="hidden">
+        <span id="currentUsername"></span>
+        <div id="userAvatar"></div>
+    </div>
+
+    <script>
+        // Timer funksiyası
+        let callStartTime = null;
+        let timerInterval = null;
+        
+        function startTimer() {
+            if (timerInterval) return;
+            callStartTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+                const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const secs = (elapsed % 60).toString().padStart(2, '0');
+                const timerEl = document.getElementById('callTimer');
+                if (timerEl) timerEl.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+        
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            const timerEl = document.getElementById('callTimer');
+            if (timerEl) timerEl.textContent = '00:00';
+        }
+
+        // İstifadəçi sayını yenilə
+        function updateUserCount(count) {
+            const el = document.getElementById('userCount');
+            if (el) el.textContent = `${count} istifadəçi`;
+        }
+    </script>
+     <!-- Music Player -->
+    <script src="music-player.js"></script>
+    <script>
+        // Dərhal init et, ama DOM ready gözlə
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    if (window.MusicPlayer) MusicPlayer.init();
+                }, 100);
+            });
+        } else {
+            // DOM artıq ready-dir
+            setTimeout(function() {
+                if (window.MusicPlayer) MusicPlayer.init();
+            }, 100);
+        }
+    </script>
+</body>
+</html>
