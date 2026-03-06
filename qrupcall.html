@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qrup Video Zəngi</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#2d328f",
+                        secondary: "#1b66ea",
+                        background: "#ffffff",
+                        text: "#333333",
+                        "text-secondary": "#666666",
+                    },
+                    fontFamily: {
+                        display: ["Plus Jakarta Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        
+        .video-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        .control-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(27, 102, 234, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(27, 102, 234, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(27, 102, 234, 0); }
+        }
+        
+        /* LAYOUT 1: Tək istifadəçi */
+        #singleUserLayout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            height: 100%;
+        }
+
+        #singleUserLayout > div {
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16/9;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #1b66ea;
+            box-shadow: 0 0 40px rgba(27, 102, 234, 0.3);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* LAYOUT 2: Normal grid */
+        #normalGridLayout {
+            display: grid;
+            gap: 1rem;
+            height: 100%;
+            padding: 1rem;
+            align-content: center;
+        }
+
+        #normalGridLayout.grid-cols-1 { grid-template-columns: 1fr; max-width: 800px; margin: 0 auto; }
+        #normalGridLayout.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        #normalGridLayout.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+        #normalGridLayout.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+        #normalGridLayout.grid-cols-2-2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
+
+        /* LAYOUT 3: Tək ekran paylaşımı */
+        #singleScreenLayout {
+            display: flex;
+            gap: 1rem;
+            height: 100%;
+            padding: 1rem;
+        }
+
+        #singleScreenLayout .main-screen {
+            flex: 1;
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 3px solid #1b66ea;
+        }
+
+        #rightSideGrid {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        #rightSideGrid > div {
+            height: 140px;
+            background: #0f0f1e;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.1);
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* LAYOUT 4: İki ekran paylaşımı */
+        #dualScreenLayout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            height: 100%;
+            padding: 1rem;
+        }
+
+        #dualScreenLayout > div {
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 3px solid #1b66ea;
+        }
+
+        /* Ümumi stillər */
+        .group-participant {
+            position: relative;
+            background: #0f0f1e;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            min-height: 0;
+        }
+
+        .group-participant:hover {
+            transform: scale(1.02);
+            border-color: rgba(27, 102, 234, 0.5);
+        }
+
+        .group-participant.screen-sharing {
+            border-color: #1b66ea !important;
+            box-shadow: 0 0 20px rgba(27, 102, 234, 0.5);
+        }
+
+        .group-participant video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .participant-info {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.7);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 20;
+        }
+
+        .speaking-indicator {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            animation: speaking 1s infinite;
+        }
+
+        @keyframes speaking {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        .screen-share-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(27, 102, 234, 0.9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 20;
+        }
+
+        /* Scrollbar */
+        #rightSideGrid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #rightSideGrid::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+        }
+
+        #rightSideGrid::-webkit-scrollbar-thumb {
+            background: rgba(27, 102, 234, 0.5);
+            border-radius: 3px;
+        }
+
+        /* Toast */
+        .toast-notification {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 10000;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            #singleScreenLayout {
+                flex-direction: column;
+            }
+            
+            #rightSideGrid {
+                width: 100%;
+                height: 120px;
+                flex-direction: row;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+            
+            #rightSideGrid > div {
+                width: 160px;
+                height: 100%;
+                flex-shrink: 0;
+            }
+            
+            #dualScreenLayout {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body class="bg-background text-text h-screen overflow-hidden">
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, get, remove, update, off } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDli-QC8Vt17pjESnHhwzfkwIDLSW9hHyA",
+            authDomain: "realtime-database-37f15.firebaseapp.com",
+            databaseURL: "https://realtime-database-37f15-default-rtdb.firebaseio.com",
+            projectId: "realtime-database-37f15",
+            storageBucket: "realtime-database-37f15.firebasestorage.app",
+            messagingSenderId: "71634699985",
+            appId: "1:71634699985:web:fc3ab99eb5db32da7ca7f0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Dəyişənlər
+        let currentUser = null;
+        let groupRoomCode = null;
+        let groupLocalStream = null;
+        let groupScreenStream = null;
+        let isGroupCallActive = false;
+        let isGroupScreenSharing = false;
+        let groupPeerConnections = new Map();
+        let groupRoomListeners = [];
+        let groupCheckInterval = null;
+        let savedCameraTrack = null;
+        let currentLayout = 'single'; // single, grid, singleScreen, dualScreen
+
+        const iceServers = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // İlkin yükləmə
+        window.addEventListener('load', () => {
+            loadCurrentUser();
+        });
+
+        function loadCurrentUser() {
+            const data = localStorage.getItem('adminUser');
+            if (!data) {
+                alert("Giriş tələb olunur!");
+                window.location.href = "index.html";
+                return;
+            }
+            
+            currentUser = JSON.parse(data);
+            
+            document.getElementById('currentUsername').textContent = currentUser.username;
+            document.getElementById('headerUsername').textContent = currentUser.username;
+            document.getElementById('headerAvatar').textContent = currentUser.username.charAt(0).toUpperCase();
+            
+            // URL-dən kodu yoxla və avtomatik qoşul
+            checkUrlForGroupCode();
+        }
+
+        // URL-dən otaq kodunu oxu və avtomatik qoşul
+        function checkUrlForGroupCode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomCode = urlParams.get('room');
+            
+            if (roomCode && roomCode.length === 6) {
+                // Input-a kodu yaz
+                document.getElementById('groupCodeInput').value = roomCode.toUpperCase();
+                
+                // Qoşulma bölməsini göstər
+                document.getElementById('joinGroupSection').classList.remove('hidden');
+                
+                // Birbaşa qoşulmağa cəhd et (istifadəçi artıq daxil olub)
+                if (currentUser && currentUser.username) {
+                    setTimeout(() => {
+                        joinGroupByCode(roomCode.toUpperCase());
+                    }, 500);
+                }
+            }
+        }
+
+        // 6 hərfli kod yarat
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // URL-i yenilə
+        function updateUrlWithRoomCode(code) {
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('room', code);
+            window.history.pushState({}, '', newUrl);
+        }
+
+        // Yeni otaq yarat
+        window.createGroupRoom = async function() {
+            try {
+                const roomCode = generateRoomCode();
+                groupRoomCode = roomCode;
+                
+                const roomRef = ref(db, 'groupRooms/' + roomCode);
+                
+                await set(roomRef, {
+                    code: roomCode,
+                    createdBy: currentUser.username,
+                    createdAt: Date.now(),
+                    active: true,
+                    screenShares: {},
+                    participants: {
+                        [currentUser.username]: {
+                            username: currentUser.username,
+                            joinedAt: Date.now(),
+                            isScreenSharing: false,
+                            isMuted: false,
+                            isCameraOff: false,
+                            isHost: true
+                        }
+                    }
+                });
+                
+                updateUrlWithRoomCode(roomCode);
+                
+                // UI yenilə
+                document.getElementById('createdGroupSection').classList.remove('hidden');
+                document.getElementById('createdRoomCode').textContent = roomCode;
+                document.getElementById('joinGroupSection').classList.add('hidden');
+                
+                showToast('Qrup otağı yaradıldı! Kod: ' + roomCode, 'success');
+                
+                // Otağa qoşul
+                await joinGroupRoom(roomCode);
+                
+            } catch (err) {
+                console.error('Otaq yaratma xətası:', err);
+                showToast('Otaq yaradıla bilmədi: ' + err.message, 'error');
+            }
+        };
+
+        // Kod ilə qoşul - YALNIZ input-dan oxuyur
+        window.joinGroupByCode = async function(code) {
+            // Əgər parametr göndərilməyibsə, input-dan oxu
+            if (!code) {
+                code = document.getElementById('groupCodeInput').value.toUpperCase().trim();
+            }
+            
+            if (!code || code.length !== 6) {
+                showToast('Düzgün 6 hərfli kod daxil edin!', 'error');
+                return;
+            }
+            
+            try {
+                const roomRef = ref(db, 'groupRooms/' + code);
+                const snapshot = await get(roomRef);
+                
+                if (!snapshot.exists()) {
+                    showToast('Bu kodla otaq tapılmadı!', 'error');
+                    return;
+                }
+                
+                const roomData = snapshot.val();
+                
+                if (!roomData.active) {
+                    showToast('Bu otaq bağlanıb!', 'error');
+                    return;
+                }
+                
+                // Özünü əlavə et
+                const participantRef = ref(db, `groupRooms/${code}/participants/${currentUser.username}`);
+                await set(participantRef, {
+                    username: currentUser.username,
+                    joinedAt: Date.now(),
+                    isScreenSharing: false,
+                    isMuted: false,
+                    isCameraOff: false
+                });
+                
+                groupRoomCode = code;
+                
+                updateUrlWithRoomCode(code);
+                
+                await joinGroupRoom(code);
+                
+            } catch (err) {
+                console.error('Qoşulma xətası:', err);
+                showToast('Otağa qoşulmaq mümkün olmadı: ' + err.message, 'error');
+            }
+        };
+
+        // Otağa qoşul (əsas funksiya)
+        async function joinGroupRoom(code) {
+            try {
+                // Media al
+                groupLocalStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: true
+                });
+                
+                // UI dəyiş
+                document.getElementById('lobbySection').classList.add('hidden');
+                document.getElementById('groupCallInterface').classList.remove('hidden');
+                document.getElementById('displayGroupCode').textContent = code;
+                
+                // Başlanğıcda tək istifadəçi layout-u
+                showSingleUserLayout();
+                
+                // Firebase dinləyiciləri
+                listenForParticipants(code);
+                listenForScreenShares(code);
+                startRoomActivityCheck(code);
+                
+                isGroupCallActive = true;
+                startTimer();
+                
+                showToast('Qrup otağına qoşuldunuz!', 'success');
+                
+            } catch (err) {
+                console.error('Qoşulma xətası:', err);
+                
+                if (err.name === 'NotAllowedError') {
+                    showPermissionDialog();
+                } else {
+                    showToast('Kamera/Mikrofon xətası: ' + err.message, 'error');
+                }
+                
+                leaveGroupCall();
+            }
+        }
+
+        // İştirakçıları dinlə
+        function listenForParticipants(code) {
+            const participantsRef = ref(db, `groupRooms/${code}/participants`);
+            
+            const unsubscribe = onValue(participantsRef, async (snapshot) => {
+                if (!isGroupCallActive) return;
+                
+                const participants = snapshot.val() || {};
+                const usernames = Object.keys(participants);
+                
+                // Yeni iştirakçılar üçün bağlantı qur
+                for (const username of usernames) {
+                    if (username === currentUser.username) continue;
+                    
+                    if (!groupPeerConnections.has(username)) {
+                        await createPeerConnection(username);
+                    }
+                }
+                
+                // Ayrılanları sil
+                for (const [username, pc] of groupPeerConnections) {
+                    if (!participants[username]) {
+                        removeParticipant(username);
+                    }
+                }
+                
+                // Layout-u yenilə
+                updateLayoutBasedOnParticipants();
+                
+            });
+            
+            groupRoomListeners.push({ ref: participantsRef, unsubscribe });
+        }
+
+        // Ekran paylaşımlarını dinlə
+        function listenForScreenShares(code) {
+            const screenSharesRef = ref(db, `groupRooms/${code}/screenShares`);
+            
+            const unsubscribe = onValue(screenSharesRef, (snapshot) => {
+                if (!isGroupCallActive) return;
+                
+                const shares = snapshot.val() || {};
+                const activeSharers = Object.entries(shares)
+                    .filter(([key, value]) => value.active)
+                    .map(([key, value]) => value.username);
+                
+                updateLayoutBasedOnScreenShares(activeSharers);
+            });
+            
+            groupRoomListeners.push({ ref: screenSharesRef, unsubscribe });
+        }
+
+        // WebRTC bağlantısı yarat
+        async function createPeerConnection(username) {
+            try {
+                const pc = new RTCPeerConnection(iceServers);
+                groupPeerConnections.set(username, pc);
+                
+                // Local stream əlavə et
+                if (groupLocalStream) {
+                    groupLocalStream.getTracks().forEach(track => {
+                        pc.addTrack(track, groupLocalStream);
+                    });
+                }
+                
+                pc.ontrack = (event) => {
+                    if (event.streams && event.streams[0]) {
+                        addRemoteVideo(username, event.streams[0]);
+                    }
+                };
+                
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        const candidateRef = ref(db, `groupRooms/${groupRoomCode}/candidates/${currentUser.username}/${username}`);
+                        push(candidateRef, event.candidate.toJSON());
+                    }
+                };
+                
+                // Offer yarat
+                const offer = await pc.createOffer({
+                    offerToReceiveAudio: true,
+                    offerToReceiveVideo: true
+                });
+                
+                await pc.setLocalDescription(offer);
+                
+                const offerRef = ref(db, `groupRooms/${groupRoomCode}/offers/${currentUser.username}_${username}`);
+                await set(offerRef, {
+                    offer: offer,
+                    from: currentUser.username,
+                    to: username,
+                    timestamp: Date.now()
+                });
+                
+                // Answer dinlə
+                const answerRef = ref(db, `groupRooms/${groupRoomCode}/offers/${username}_${currentUser.username}`);
+                const unsubscribe = onValue(answerRef, async (snapshot) => {
+                    if (!snapshot.exists() || pc.currentRemoteDescription) return;
+                    
+                    const data = snapshot.val();
+                    if (data.answer) {
+                        await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    }
+                });
+                
+                groupRoomListeners.push({ ref: answerRef, unsubscribe });
+                
+                // ICE candidates dinlə
+                const candidateRef = ref(db, `groupRooms/${groupRoomCode}/candidates/${username}/${currentUser.username}`);
+                const candUnsubscribe = onValue(candidateRef, (snapshot) => {
+                    snapshot.forEach((child) => {
+                        const candidate = new RTCIceCandidate(child.val());
+                        pc.addIceCandidate(candidate).catch(e => console.error('ICE xətası:', e));
+                    });
+                });
+                
+                groupRoomListeners.push({ ref: candidateRef, unsubscribe: candUnsubscribe });
+                
+            } catch (err) {
+                console.error('Peer connection xətası:', err);
+            }
+        }
+
+        // Remote video əlavə et
+        function addRemoteVideo(username, stream) {
+            // Əvvəlcə sil əgər varsa
+            const existing = document.getElementById('participant_' + username);
+            if (existing) existing.remove();
+            
+            const container = document.createElement('div');
+            container.className = 'group-participant';
+            container.id = 'participant_' + username;
+            
+            const video = document.createElement('video');
+            video.id = 'video_' + username;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.srcObject = stream;
+            
+            container.appendChild(video);
+            
+            // Info
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'participant-info';
+            infoDiv.innerHTML = `
+                <span class="material-symbols-outlined text-sm">person</span>
+                <span>${username}</span>
+                <div class="speaking-indicator hidden" id="speaking_${username}"></div>
+            `;
+            container.appendChild(infoDiv);
+            
+            // Normal grid-ə əlavə et
+            document.getElementById('normalGridLayout').appendChild(container);
+            
+            // Audio indicator
+            setupAudioIndicator(stream, 'speaking_' + username);
+            
+            // Layout yenilə
+            updateLayoutBasedOnParticipants();
+            
+            showToast(username + ' otağa qoşuldu', 'info');
+        }
+
+        // İştirakçını sil
+        function removeParticipant(username) {
+            const pc = groupPeerConnections.get(username);
+            if (pc) {
+                pc.close();
+                groupPeerConnections.delete(username);
+            }
+            
+            const el = document.getElementById('participant_' + username);
+            if (el) el.remove();
+            
+            updateLayoutBasedOnParticipants();
+        }
+
+        // Layout idarəetmə
+        function updateLayoutBasedOnParticipants() {
+            const participants = document.querySelectorAll('.group-participant');
+            const count = participants.length + 1; // +1 özümüz
+            
+            // Əgər heç kim ekran paylaşmırsa
+            if (currentLayout !== 'singleScreen' && currentLayout !== 'dualScreen') {
+                if (count === 1) {
+                    showSingleUserLayout();
+                } else {
+                    showGridLayout(count);
+                }
+            }
+        }
+
+        function updateLayoutBasedOnScreenShares(sharers) {
+            if (sharers.length === 0) {
+                // Heç kim paylaşmır - normal grid
+                const count = document.querySelectorAll('.group-participant').length + 1;
+                if (count === 1) {
+                    showSingleUserLayout();
+                } else {
+                    showGridLayout(count);
+                }
+            } else if (sharers.length === 1) {
+                // Bir nəfər paylaşır
+                showSingleScreenLayout(sharers[0]);
+            } else {
+                // İki nəfər paylaşır
+                showDualScreenLayout(sharers[0], sharers[1]);
+            }
+        }
+
+        // LAYOUT 1: Tək istifadəçi
+        function showSingleUserLayout() {
+            hideAllLayouts();
+            currentLayout = 'single';
+            
+            document.getElementById('singleUserLayout').classList.remove('hidden');
+            
+            // Öz video-nu yerləşdir
+            const video = document.getElementById('singleUserVideo');
+            if (groupLocalStream) {
+                video.srcObject = groupLocalStream;
+            }
+            document.getElementById('singleUserName').textContent = currentUser.username + ' (Siz)';
+        }
+
+        // LAYOUT 2: Grid
+        function showGridLayout(count) {
+            hideAllLayouts();
+            currentLayout = 'grid';
+            
+            const grid = document.getElementById('normalGridLayout');
+            grid.classList.remove('hidden');
+            
+            // Grid class-larını təmizlə
+            grid.className = 'w-full h-full grid gap-3 transition-all duration-500';
+            
+            // Özümüzü əlavə et əgər yoxdursa
+            let localContainer = document.getElementById('participant_' + currentUser.username);
+            if (!localContainer) {
+                localContainer = document.createElement('div');
+                localContainer.className = 'group-participant';
+                localContainer.id = 'participant_' + currentUser.username;
+                
+                const video = document.createElement('video');
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+                video.srcObject = groupLocalStream;
+                
+                localContainer.appendChild(video);
+                
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'participant-info';
+                infoDiv.innerHTML = `
+                    <span class="material-symbols-outlined text-sm">person</span>
+                    <span>Siz (${currentUser.username})</span>
+                    <div class="speaking-indicator hidden" id="speaking_${currentUser.username}"></div>
+                `;
+                localContainer.appendChild(infoDiv);
+                
+                grid.appendChild(localContainer);
+            }
+            
+            // Grid layout seç
+            if (count <= 2) {
+                grid.classList.add('grid-cols-2');
+            } else if (count <= 4) {
+                grid.classList.add('grid-cols-2-2');
+            } else if (count <= 6) {
+                grid.classList.add('grid-cols-3');
+            } else {
+                grid.classList.add('grid-cols-4');
+            }
+        }
+
+        // LAYOUT 3: Tək ekran paylaşımı
+        function showSingleScreenLayout(sharerUsername) {
+            hideAllLayouts();
+            currentLayout = 'singleScreen';
+            
+            document.getElementById('singleScreenLayout').classList.remove('hidden');
+            document.getElementById('mainScreenSharerName').textContent = sharerUsername;
+            
+            // Ekran paylaşanın videosunu böyük ekrana yerləşdir
+            const sharerVideo = document.getElementById('video_' + sharerUsername);
+            const mainVideo = document.getElementById('mainScreenVideo');
+            
+            if (sharerVideo && sharerVideo.srcObject) {
+                mainVideo.srcObject = sharerVideo.srcObject;
+            } else if (sharerUsername === currentUser.username && groupScreenStream) {
+                mainVideo.srcObject = groupScreenStream;
+            }
+            
+            // Digərlərini sağ tərəfə yığ
+            updateRightSideGrid(sharerUsername);
+        }
+
+        // LAYOUT 4: İki ekran paylaşımı
+        function showDualScreenLayout(sharer1, sharer2) {
+            hideAllLayouts();
+            currentLayout = 'dualScreen';
+            
+            document.getElementById('dualScreenLayout').classList.remove('hidden');
+            
+            document.getElementById('dualScreen1Name').textContent = sharer1;
+            document.getElementById('dualScreen2Name').textContent = sharer2;
+            
+            // Videoları yerləşdir
+            const video1 = document.getElementById('video_' + sharer1);
+            const video2 = document.getElementById('video_' + sharer2);
+            
+            if (video1) document.getElementById('dualScreen1').srcObject = video1.srcObject;
+            if (video2) document.getElementById('dualScreen2').srcObject = video2.srcObject;
+            
+            // Əgər özümüz paylaşıriqsa
+            if (sharer1 === currentUser.username && groupScreenStream) {
+                document.getElementById('dualScreen1').srcObject = groupScreenStream;
+            }
+            if (sharer2 === currentUser.username && groupScreenStream) {
+                document.getElementById('dualScreen2').srcObject = groupScreenStream;
+            }
+        }
+
+        // Sağ tərəf grid-ini yenilə
+        function updateRightSideGrid(excludeUsername) {
+            const container = document.getElementById('rightSideGrid');
+            container.innerHTML = '';
+            
+            // Bütün istifadəçiləri yığ
+            const allParticipants = document.querySelectorAll('.group-participant');
+            allParticipants.forEach(participant => {
+                const username = participant.id.replace('participant_', '');
+                if (username !== excludeUsername) {
+                    const clone = participant.cloneNode(true);
+                    clone.style.height = '140px';
+                    container.appendChild(clone);
+                }
+            });
+        }
+
+        // Bütün layout-ları gizlət
+        function hideAllLayouts() {
+            document.getElementById('singleUserLayout').classList.add('hidden');
+            document.getElementById('normalGridLayout').classList.add('hidden');
+            document.getElementById('singleScreenLayout').classList.add('hidden');
+            document.getElementById('dualScreenLayout').classList.add('hidden');
+        }
+
+        // Kontrol funksiyaları
+        window.toggleGroupMute = function() {
+            if (!groupLocalStream) return;
+            
+            const audioTrack = groupLocalStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                
+                const btn = document.getElementById('groupMuteBtn');
+                if (audioTrack.enabled) {
+                    btn.classList.remove('bg-red-500');
+                    btn.innerHTML = '<span class="material-symbols-outlined text-2xl">mic</span>';
+                } else {
+                    btn.classList.add('bg-red-500');
+                    btn.innerHTML = '<span class="material-symbols-outlined text-2xl">mic_off</span>';
+                }
+                
+                if (groupRoomCode) {
+                    update(ref(db, `groupRooms/${groupRoomCode}/participants/${currentUser.username}`), {
+                        isMuted: !audioTrack.enabled
+                    });
+                }
+            }
+        };
+
+        window.toggleGroupCamera = function() {
+            if (!groupLocalStream) return;
+            
+            const videoTrack = groupLocalStream.getVideoTracks()[0];
+            if (videoTrack) {
+                videoTrack.enabled = !videoTrack.enabled;
+                
+                const btn = document.getElementById('groupCameraBtn');
+                if (videoTrack.enabled) {
+                    btn.classList.remove('bg-red-500');
+                    btn.innerHTML = '<span class="material-symbols-outlined text-2xl">videocam</span>';
+                } else {
+                    btn.classList.add('bg-red-500');
+                    btn.innerHTML = '<span class="material-symbols-outlined text-2xl">videocam_off</span>';
+                }
+                
+                if (groupRoomCode) {
+                    update(ref(db, `groupRooms/${groupRoomCode}/participants/${currentUser.username}`), {
+                        isCameraOff: !videoTrack.enabled
+                    });
+                }
+            }
+        };
+
+        window.toggleGroupScreenShare = async function() {
+            if (!isGroupCallActive) {
+                showToast('Əvvəlcə qrup otağına qoşulun!', 'error');
+                return;
+            }
+            
+            try {
+                if (!isGroupScreenSharing) {
+                    // Başlat
+                    groupScreenStream = await navigator.mediaDevices.getDisplayMedia({
+                        video: { cursor: "always" },
+                        audio: true
+                    });
+                    
+                    const screenTrack = groupScreenStream.getVideoTracks()[0];
+                    
+                    // Bütün peer-lərdə əvəz et
+                    for (const [username, pc] of groupPeerConnections) {
+                        const sender = pc.getSenders().find(s => 
+                            s.track && s.track.kind === 'video'
+                        );
+                        if (sender) {
+                            savedCameraTrack = sender.track;
+                            await sender.replaceTrack(screenTrack);
+                        }
+                    }
+                    
+                    // Local video-nu dəyiş
+                    const localContainer = document.getElementById('participant_' + currentUser.username);
+                    if (localContainer) {
+                        localContainer.classList.add('screen-sharing');
+                        const video = localContainer.querySelector('video');
+                        if (video) video.srcObject = groupScreenStream;
+                    }
+                    
+                    // Firebase-də bildir
+                    await update(ref(db, `groupRooms/${groupRoomCode}/screenShares/${currentUser.username}`), {
+                        username: currentUser.username,
+                        active: true,
+                        startedAt: Date.now()
+                    });
+                    
+                    screenTrack.onended = () => {
+                        stopGroupScreenShare();
+                    };
+                    
+                    isGroupScreenSharing = true;
+                    
+                    document.getElementById('groupScreenBtn').classList.add('hidden');
+                    document.getElementById('stopGroupScreenBtn').classList.remove('hidden');
+                    
+                    showToast('Ekran paylaşımı aktivdir', 'success');
+                    
+                } else {
+                    await stopGroupScreenShare();
+                }
+                
+            } catch (err) {
+                console.error('Ekran paylaşımı xətası:', err);
+                showToast('Ekran paylaşımı başlamadı: ' + err.message, 'error');
+            }
+        };
+
+        window.stopGroupScreenShare = async function() {
+            if (!isGroupScreenSharing) return;
+            
+            if (groupScreenStream) {
+                groupScreenStream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Kamera track-ini bərpa et
+            if (savedCameraTrack && groupLocalStream) {
+                for (const [username, pc] of groupPeerConnections) {
+                    const sender = pc.getSenders().find(s => 
+                        s.track && s.track.kind === 'video'
+                    );
+                    if (sender) {
+                        await sender.replaceTrack(savedCameraTrack);
+                    }
+                }
+                savedCameraTrack = null;
+            }
+            
+            // Local video-nu qaytar
+            const localContainer = document.getElementById('participant_' + currentUser.username);
+            if (localContainer) {
+                localContainer.classList.remove('screen-sharing');
+                const video = localContainer.querySelector('video');
+                if (video && groupLocalStream) {
+                    video.srcObject = groupLocalStream;
+                }
+            }
+            
+            // Firebase-də bildir
+            if (groupRoomCode) {
+                await update(ref(db, `groupRooms/${groupRoomCode}/screenShares/${currentUser.username}`), {
+                    active: false,
+                    stoppedAt: Date.now()
+                });
+            }
+            
+            isGroupScreenSharing = false;
+            
+            document.getElementById('groupScreenBtn').classList.remove('hidden');
+            document.getElementById('stopGroupScreenBtn').classList.add('hidden');
+            
+            showToast('Ekran paylaşımı dayandırıldı', 'info');
+        };
+
+        window.leaveGroupCall = async function() {
+            // Təmizlik
+            if (groupCheckInterval) {
+                clearInterval(groupCheckInterval);
+                groupCheckInterval = null;
+            }
+            
+            stopTimer();
+            
+            // Listener-ləri təmizlə
+            groupRoomListeners.forEach(listener => {
+                off(listener.ref, 'value', listener.unsubscribe);
+            });
+            groupRoomListeners = [];
+            
+            // Özünü sil
+            if (groupRoomCode && currentUser) {
+                const participantRef = ref(db, `groupRooms/${groupRoomCode}/participants/${currentUser.username}`);
+                await remove(participantRef);
+                
+                // Əgər sonuncu iştirakçısansa, otağı bağla
+                const roomRef = ref(db, `groupRooms/${groupRoomCode}`);
+                const snapshot = await get(roomRef);
+                if (snapshot.exists()) {
+                    const participants = snapshot.val().participants || {};
+                    const remaining = Object.keys(participants).filter(p => p !== currentUser.username);
+                    
+                    if (remaining.length === 0) {
+                        await update(roomRef, { active: false, closedAt: Date.now() });
+                    }
+                }
+            }
+            
+            // Peer-ləri bağla
+            for (const [username, pc] of groupPeerConnections) {
+                pc.close();
+            }
+            groupPeerConnections.clear();
+            
+            // Stream-ləri dayandır
+            if (groupLocalStream) {
+                groupLocalStream.getTracks().forEach(track => track.stop());
+                groupLocalStream = null;
+            }
+            if (groupScreenStream) {
+                groupScreenStream.getTracks().forEach(track => track.stop());
+                groupScreenStream = null;
+            }
+            
+            // UI reset
+            document.getElementById('groupCallInterface').classList.add('hidden');
+            document.getElementById('lobbySection').classList.remove('hidden');
+            document.getElementById('normalGridLayout').innerHTML = '';
+            document.getElementById('createdGroupSection').classList.add('hidden');
+            document.getElementById('joinGroupSection').classList.add('hidden');
+            
+            // URL-dən kodu sil
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('room');
+            window.history.pushState({}, '', newUrl);
+            
+            isGroupCallActive = false;
+            isGroupScreenSharing = false;
+            groupRoomCode = null;
+            currentLayout = 'single';
+            
+            showToast('Qrup otağından çıxdınız', 'info');
+        };
+
+        window.copyGroupLink = function() {
+            if (!groupRoomCode) return;
+            
+            const link = window.location.origin + window.location.pathname + '?room=' + groupRoomCode;
+            
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('Link kopyalandı!', 'success');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = link;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('Link kopyalandı!', 'success');
+            });
+        };
+
+        // Otaq aktivliyini yoxla
+        function startRoomActivityCheck(code) {
+            groupCheckInterval = setInterval(async () => {
+                if (!isGroupCallActive) return;
+                
+                const snapshot = await get(ref(db, `groupRooms/${code}`));
+                if (!snapshot.exists() || !snapshot.val().active) {
+                    showToast('Otaq bağlanıb!', 'info');
+                    leaveGroupCall();
+                }
+            }, 5000);
+        }
+
+        // Audio indicator
+        function setupAudioIndicator(stream, elementId) {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const analyser = audioContext.createAnalyser();
+                const microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+                analyser.fftSize = 256;
+                
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                const indicator = document.getElementById(elementId);
+                
+                if (!indicator) return;
+                
+                function checkAudio() {
+                    if (!isGroupCallActive) return;
+                    
+                    analyser.getByteFrequencyData(dataArray);
+                    const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                    
+                    if (average > 20) {
+                        indicator.classList.remove('hidden');
+                    } else {
+                        indicator.classList.add('hidden');
+                    }
+                    
+                    requestAnimationFrame(checkAudio);
+                }
+                
+                checkAudio();
+            } catch (e) {
+                console.log('Audio indicator xətası:', e);
+            }
+        }
+
+        // İcazə dialogu
+        function showPermissionDialog() {
+            const existing = document.getElementById('permissionDialog');
+            if (existing) existing.remove();
+            
+            const dialog = document.createElement('div');
+            dialog.id = 'permissionDialog';
+            dialog.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm';
+            dialog.innerHTML = `
+                <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 text-center shadow-2xl">
+                    <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center text-red-500 text-4xl mx-auto mb-4">
+                        <span class="material-symbols-outlined text-4xl">videocam_off</span>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-[#333333] mb-2">Kamera və Mikrofon İcazəsi Tələb Olunur</h3>
+                    <p class="text-[#666666] mb-6">Video zəng üçün kamera və mikrofon icazəsi verməlisiniz.</p>
+                    <button onclick="location.reload()" class="w-full py-3 bg-gradient-to-r from-[#2d328f] to-[#1b66ea] text-white rounded-xl font-medium hover:shadow-lg transition-all">
+                        Səhifəni Yenilə
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(dialog);
+        }
+
+        // Toast
+        function showToast(message, type = 'info') {
+            const existing = document.querySelectorAll('.toast-notification');
+            existing.forEach(t => t.remove());
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            
+            const colors = {
+                success: 'bg-green-600',
+                error: 'bg-red-600',
+                info: 'bg-[#2d328f]'
+            };
+            
+            toast.classList.add(colors[type] || colors.info);
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">
+                        ${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}
+                    </span>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // Timer
+        let timerInterval = null;
+        function startTimer() {
+            if (timerInterval) return;
+            const startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const secs = (elapsed % 60).toString().padStart(2, '0');
+                const el = document.getElementById('groupTimer');
+                if (el) el.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            const el = document.getElementById('groupTimer');
+            if (el) el.textContent = '00:00';
+        }
+
+        // Çıxış
+        window.addEventListener('beforeunload', async () => {
+            if (isGroupCallActive) {
+                await leaveGroupCall();
+            }
+        });
+    </script>
+
+    <!-- Əsas Layout -->
+    <div class="flex h-screen w-full overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white border-r border-[#2d328f]/50 flex flex-col flex-shrink-0 h-screen">
+            <div class="p-6 border-b border-[#2d328f]/50">
+                <a href="https://azsoftware.az/">
+                    <img src="http://azsoftware.az/wp-content/uploads/2022/10/logo-azsoftware@2x.png" 
+                         alt="Azsoftware Logo" style="width: 200px; height: auto;">
+                </a>
+            </div>
+            
+             <nav class="flex-1 p-4 space-y-2">
+                <a href="isdifadəçi1.html" class="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-[#333333] hover:bg-[#ffffff]/50 rounded-xl transition-all">
+                    <span class="material-symbols-outlined">person</span>
+                    <span class="font-medium">Profil</span>
+                </a>
+                <a href="sms.html" class="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-[#333333] hover:bg-[#ffffff]/50 rounded-xl transition-all">
+                    <span class="material-symbols-outlined">sms</span>
+                    <span class="font-medium">Messenger</span>
+                </a>
+                <a href="videocall.html" class="flex items-center gap-3 px-4 py-3 bg-[#1b66ea]/20 text-[#333333] rounded-xl border border-[#1b66ea]/50">
+                    <span class="material-symbols-outlined" >video_call</span>
+                    <span class="font-medium" style="color: #1b66ea;">Ekran paylaşımı</span>
+                </a>
+                <a href="xəbərlər.html" class="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-[#333333] hover:bg-[#ffffff]/50 rounded-xl transition-all">
+                  <span class="material-symbols-outlined">newspaper</span>
+                   <span class="font-medium">Xəbərlər</span>
+                </a>
+            </nav>
+            
+            <div class="p-4 border-t border-[#2d328f]/50">
+                <button onclick="location.href='index.html'" class="flex items-center gap-3 px-4 py-3 text-text-secondary hover:text-[#333333] w-full hover:bg-gray-50 rounded-xl transition-all">
+                    <span class="material-symbols-outlined" style="color: #1b66ea;">logout</span>
+                    <span class="font-medium" style="color: #1b66ea;">Çıxış Et</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-gray-50">
+            
+            <!-- Header -->
+            <header class="h-16 border-b border-[#2d328f]/50 flex items-center justify-between px-8 bg-white flex-shrink-0">
+                <h2 class="text-xl font-semibold text-[#333333] flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[#1b66ea]">groups</span>
+                    Qrup Video Zəngi
+                </h2>
+                <div class="flex items-center gap-4">
+                    <span class="text-text-secondary text-sm" id="headerUsername">-</span>
+                    <div id="headerAvatar" class="w-10 h-10 rounded-full bg-gradient-to-br from-[#2d328f] to-[#1b66ea] flex items-center justify-center text-white font-bold">
+                        ?
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-hidden relative">
+                
+                <!-- LOBBY SECTION -->
+                <div id="lobbySection" class="h-full overflow-y-auto p-6">
+                    <div class="max-w-4xl mx-auto">
+                        
+                        <!-- Başlıq -->
+                        <div class="text-center mb-8">
+                            <h1 class="text-3xl font-bold text-[#333333] mb-2">Qrup Video Zəngi</h1>
+                            <p class="text-[#666666]">Çox istifadəçi ilə eyni anda görüş keçirin</p>
+                        </div>
+
+                        <!-- Yeni Otaq Yarat -->
+                        <div class="bg-white rounded-2xl border border-[#1b66ea]/30 p-6 mb-6 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-[#333333] flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[#1b66ea]">add_circle</span>
+                                        Yeni Qrup Otağı Yarat
+                                    </h3>
+                                    <p class="text-sm text-[#666666] mt-1">6 hərfli unikal kod yaradılacaq</p>
+                                </div>
+                                <button onclick="createGroupRoom()" class="px-6 py-3 bg-gradient-to-r from-[#2d328f] to-[#1b66ea] text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center gap-2">
+                                    <span class="material-symbols-outlined">video_call</span>
+                                    Otaq Yarat
+                                </button>
+                            </div>
+                            
+                            <!-- Yaradıldıqda göstəriləcək -->
+                            <div id="createdGroupSection" class="hidden mt-4 pt-4 border-t border-[#1b66ea]/20">
+                                <div class="bg-[#1b66ea]/10 rounded-xl p-4 text-center">
+                                    <p class="text-sm text-[#666666] mb-2">Otaq kodunuz:</p>
+                                    <div class="flex items-center justify-center gap-3">
+                                        <span id="createdRoomCode" class="text-3xl font-bold text-[#1b66ea] font-mono tracking-widest">------</span>
+                                        <button onclick="copyGroupLink()" class="p-2 bg-white rounded-lg hover:bg-gray-50 transition-all border border-[#1b66ea]/30" title="Linki kopyala">
+                                            <span class="material-symbols-outlined text-[#1b66ea]">content_copy</span>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-[#666666] mt-2">Bu kodu digər istifadəçilərlə paylaşın</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mövcud Otağa Qoşul -->
+                        <div class="bg-white rounded-2xl border border-[#1b66ea]/30 p-6 shadow-sm">
+                            <h3 class="text-lg font-semibold text-[#333333] flex items-center gap-2 mb-4">
+                                <span class="material-symbols-outlined text-[#1b66ea]">login</span>
+                                Mövcud Otağa Qoşul
+                            </h3>
+                            
+                            <div id="joinGroupSection">
+                                <div class="flex gap-3">
+                                    <input type="text" id="groupCodeInput" placeholder="Qrup kodu (məs: ABC123)" maxlength="6" 
+                                           class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl text-[#333333] uppercase text-center tracking-wider font-mono text-lg focus:border-[#1b66ea] focus:outline-none transition-all"
+                                           oninput="this.value = this.value.toUpperCase()">
+                                    <button onclick="joinGroupByCode()" class="px-6 py-3 bg-[#1b66ea] text-white rounded-xl hover:bg-[#2d328f] transition-all flex items-center gap-2 font-medium">
+                                        <span class="material-symbols-outlined">login</span>
+                                        Qoşul
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Təlimat -->
+                        <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                            <h4 class="font-medium text-[#2d328f] mb-2 flex items-center gap-2">
+                                <span class="material-symbols-outlined">info</span>
+                                Necə istifadə edilir?
+                            </h4>
+                            <ul class="text-sm text-[#666666] space-y-1 list-disc list-inside">
+                                <li><strong>"Otaq Yarat"</strong> düyməsinə klikləyərək yeni qrup otağı yaradın</li>
+                                <li>6 hərfli kodu digər istifadəçilərlə paylaşın</li>
+                                <li>Digər istifadəçilər kodu daxil edərək otağa qoşula bilər</li>
+                                <li>Ekran paylaşımı üçün <strong>"Ekran"</strong> düyməsindən istifadə edin</li>
+                                <li>İstifadəçilər ekran paylaşdıqca layout avtomatik dəyişəcək</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- GROUP CALL INTERFACE -->
+                <div id="groupCallInterface" class="hidden fixed inset-0 z-50 bg-[#0f0f1e] flex flex-col">
+                    
+                    <!-- Header -->
+                    <div class="flex-shrink-0 bg-black/40 backdrop-blur-md p-4 flex items-center justify-between border-b border-white/10">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-[#1b66ea]/20 px-4 py-2 rounded-lg border border-[#1b66ea]/50">
+                                <span class="text-xs text-[#1b66ea] uppercase font-medium">Otaq Kodu</span>
+                                <div id="displayGroupCode" class="text-xl font-bold text-white font-mono tracking-widest">---</div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-3">
+                            <span class="text-white/60 font-mono" id="groupTimer">00:00</span>
+                            <button onclick="leaveGroupCall()" class="px-4 py-2 bg-red-500/80 hover:bg-red-600 text-white rounded-lg flex items-center gap-2 transition-all">
+                                <span class="material-symbols-outlined">call_end</span>
+                                Çıxış
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Video Area -->
+                    <div class="flex-1 relative overflow-hidden" id="groupVideoArea">
+                        
+                        <!-- LAYOUT 1: Tək İstifadəçi -->
+                        <div id="singleUserLayout" class="hidden w-full h-full">
+                            <div>
+                                <video id="singleUserVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                                <div class="absolute bottom-4 left-4 bg-black/60 text-white px-4 py-2 rounded-full flex items-center gap-2">
+                                    <span class="material-symbols-outlined">person</span>
+                                    <span id="singleUserName">Siz</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- LAYOUT 2: Normal Grid -->
+                        <div id="normalGridLayout" class="hidden w-full h-full">
+                            <!-- Participant videos injected here -->
+                        </div>
+                        
+                        <!-- LAYOUT 3: Tək Ekran Paylaşımı -->
+                        <div id="singleScreenLayout" class="hidden w-full h-full">
+                            <div class="main-screen">
+                                <video id="mainScreenVideo" autoplay playsinline class="w-full h-full object-contain bg-black"></video>
+                                <div class="screen-share-badge">
+                                    <span class="material-symbols-outlined text-sm">screen_share</span>
+                                    <span id="mainScreenSharerName">İstifadəçi</span>
+                                </div>
+                            </div>
+                            <div id="rightSideGrid">
+                                <!-- Digər istifadəçilər burada -->
+                            </div>
+                        </div>
+                        
+                        <!-- LAYOUT 4: İki Ekran Paylaşımı -->
+                        <div id="dualScreenLayout" class="hidden w-full h-full">
+                            <div>
+                                <video id="dualScreen1" autoplay playsinline class="w-full h-full object-contain bg-black"></video>
+                                <div class="screen-share-badge">
+                                    <span class="material-symbols-outlined text-sm">screen_share</span>
+                                    <span id="dualScreen1Name">İstifadəçi 1</span>
+                                </div>
+                            </div>
+                            <div>
+                                <video id="dualScreen2" autoplay playsinline class="w-full h-full object-contain bg-black"></video>
+                                <div class="screen-share-badge">
+                                    <span class="material-symbols-outlined text-sm">screen_share</span>
+                                    <span id="dualScreen2Name">İstifadəçi 2</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div class="flex-shrink-0 bg-black/60 backdrop-blur-md p-4 border-t border-white/10">
+                        <div class="flex items-center justify-center gap-4">
+                            
+                            <!-- Mute -->
+                            <button id="groupMuteBtn" onclick="toggleGroupMute()" class="control-btn w-14 h-14 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-all" title="Mikrofon">
+                                <span class="material-symbols-outlined text-2xl">mic</span>
+                            </button>
+                            
+                            <!-- Camera -->
+                            <button id="groupCameraBtn" onclick="toggleGroupCamera()" class="control-btn w-14 h-14 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-all" title="Kamera">
+                                <span class="material-symbols-outlined text-2xl">videocam</span>
+                            </button>
+                            
+                            <!-- Screen Share -->
+                            <button id="groupScreenBtn" onclick="toggleGroupScreenShare()" class="control-btn w-14 h-14 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-all" title="Ekran paylaş">
+                                <span class="material-symbols-outlined text-2xl">screen_share</span>
+                            </button>
+                            
+                            <!-- Stop Screen Share -->
+                            <button id="stopGroupScreenBtn" onclick="stopGroupScreenShare()" class="control-btn w-14 h-14 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all hidden" title="Paylaşımı dayandır">
+                                <span class="material-symbols-outlined text-2xl">stop_screen_share</span>
+                            </button>
+                            
+                            <!-- Copy Link -->
+                            <button onclick="copyGroupLink()" class="control-btn w-14 h-14 rounded-full bg-green-500/80 text-white flex items-center justify-center hover:bg-green-600 transition-all" title="Linki kopyala">
+                                <span class="material-symbols-outlined text-2xl">content_copy</span>
+                            </button>
+                            
+                            <!-- End Call -->
+                            <button onclick="leaveGroupCall()" class="control-btn w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-all pulse-ring" title="Çıxış">
+                                <span class="material-symbols-outlined text-3xl">call_end</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Gizli elementlər -->
+    <div id="currentUsername" class="hidden"></div>
+
+</body>
+</html>
